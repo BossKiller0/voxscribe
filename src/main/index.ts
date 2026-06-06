@@ -142,7 +142,7 @@ function createCommandPaletteWindow(): BrowserWindow {
 
 app.whenReady().then(async () => {
   // Set app user model id for Windows
-  electronApp.setAppUserModelId('com.flowclone.windows')
+  electronApp.setAppUserModelId('com.voxscribe.windows')
 
   // Sync login item settings with launchOnStartup setting
   try {
@@ -207,7 +207,7 @@ app.whenReady().then(async () => {
   // Prune old history on startup
   pruneOldHistory()
 
-  logger.info('✅ FlowClone Windows started successfully')
+  logger.info('✅ VoxScribe Windows started successfully')
   logger.info(`📝 Hold Ctrl+Shift to start dictating`)
 })
 

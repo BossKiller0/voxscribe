@@ -9,7 +9,7 @@ export function SnippetsPage() {
   const [success, setSuccess] = useState('')
 
   const load = async () => {
-    const data = await window.flowAPI.getSnippets()
+    const data = await window.voxScribeAPI.getSnippets()
     setSnippets(data)
   }
 
@@ -20,7 +20,7 @@ export function SnippetsPage() {
       setError('Both trigger and expansion are required')
       return
     }
-    await window.flowAPI.saveSnippet(trigger.trim(), expansion.trim())
+    await window.voxScribeAPI.saveSnippet(trigger.trim(), expansion.trim())
     setTrigger('')
     setExpansion('')
     setError('')
@@ -30,7 +30,7 @@ export function SnippetsPage() {
   }
 
   const handleDelete = async (id: number) => {
-    await window.flowAPI.deleteSnippet(id)
+    await window.voxScribeAPI.deleteSnippet(id)
     load()
   }
 

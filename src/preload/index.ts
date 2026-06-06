@@ -3,7 +3,7 @@ import { IPC } from '../shared/types'
 import type { AppSettings, DictationEntry, Snippet, TranscriptionResult } from '../shared/types'
 
 // Expose a typed, secure API to renderer processes
-const flowAPI = {
+const voxScribeAPI = {
   // ─── Audio ─────────────────────────────────────────────────────────────────
 
   /**
@@ -87,32 +87,32 @@ const flowAPI = {
 
   onRecordingStateChange: (callback: (state: string) => void) => {
     ipcRenderer.on(IPC.STATE_RECORDING_CHANGED, (_, state) => callback(state))
-    return () => ipcRenderer.removeAllListeners(IPC.STATE_RECORDING_CHANGED)
+    return () => { ipcRenderer.removeAllListeners(IPC.STATE_RECORDING_CHANGED) }
   },
 
   onOverlayShow: (callback: () => void) => {
     ipcRenderer.on(IPC.STATE_OVERLAY_SHOW, () => callback())
-    return () => ipcRenderer.removeAllListeners(IPC.STATE_OVERLAY_SHOW)
+    return () => { ipcRenderer.removeAllListeners(IPC.STATE_OVERLAY_SHOW) }
   },
 
   onOverlayHide: (callback: () => void) => {
     ipcRenderer.on(IPC.STATE_OVERLAY_HIDE, () => callback())
-    return () => ipcRenderer.removeAllListeners(IPC.STATE_OVERLAY_HIDE)
+    return () => { ipcRenderer.removeAllListeners(IPC.STATE_OVERLAY_HIDE) }
   },
 
   onStopRecording: (callback: () => void) => {
     ipcRenderer.on(IPC.AUDIO_STOP_RECORDING, () => callback())
-    return () => ipcRenderer.removeAllListeners(IPC.AUDIO_STOP_RECORDING)
+    return () => { ipcRenderer.removeAllListeners(IPC.AUDIO_STOP_RECORDING) }
   },
 
   onCommandPaletteShow: (callback: () => void) => {
     ipcRenderer.on(IPC.STATE_COMMAND_PALETTE_SHOW, () => callback())
-    return () => ipcRenderer.removeAllListeners(IPC.STATE_COMMAND_PALETTE_SHOW)
+    return () => { ipcRenderer.removeAllListeners(IPC.STATE_COMMAND_PALETTE_SHOW) }
   },
 
   onNavigate: (callback: (route: string) => void) => {
     ipcRenderer.on('navigate', (_, route) => callback(route))
-    return () => ipcRenderer.removeAllListeners('navigate')
+    return () => { ipcRenderer.removeAllListeners('navigate') }
   },
 
   submitApiKey: (key: string): Promise<{ success: boolean; error?: string }> =>
@@ -125,6 +125,6 @@ const flowAPI = {
     ipcRenderer.invoke('api-key:open-console')
 }
 
-contextBridge.exposeInMainWorld('flowAPI', flowAPI)
+contextBridge.exposeInMainWorld('voxScribeAPI', voxScribeAPI)
 
-export type FlowAPI = typeof flowAPI
+export type VoxScribeAPI = typeof voxScribeAPI

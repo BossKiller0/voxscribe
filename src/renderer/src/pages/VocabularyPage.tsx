@@ -8,7 +8,7 @@ export function VocabularyPage() {
   const [success, setSuccess] = useState('')
 
   const load = async () => {
-    const data = await window.flowAPI.getVocabulary()
+    const data = await window.voxScribeAPI.getVocabulary()
     setTerms(data)
   }
 
@@ -17,7 +17,7 @@ export function VocabularyPage() {
   const handleAdd = async () => {
     const term = input.trim()
     if (!term) return
-    await window.flowAPI.addVocabularyTerm(term)
+    await window.voxScribeAPI.addVocabularyTerm(term)
     setInput('')
     setSuccess(`"${term}" added!`)
     setTimeout(() => setSuccess(''), 1500)
@@ -25,7 +25,7 @@ export function VocabularyPage() {
   }
 
   const handleDelete = async (term: string) => {
-    await window.flowAPI.deleteVocabularyTerm(term)
+    await window.voxScribeAPI.deleteVocabularyTerm(term)
     load()
   }
 
@@ -140,7 +140,7 @@ export function VocabularyPage() {
               <button
                 key={t}
                 onClick={async () => {
-                  await window.flowAPI.addVocabularyTerm(t)
+                  await window.voxScribeAPI.addVocabularyTerm(t)
                   load()
                 }}
                 style={{

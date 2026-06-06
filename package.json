@@ -1,9 +1,9 @@
 {
-  "name": "flowclone-windows",
+  "name": "voxscribe-windows",
   "version": "1.0.0",
-  "description": "System-wide voice dictation for Windows — inspired by Wispr Flow",
+  "description": "VoxScribe",
   "main": "./out/main/index.js",
-  "author": "FlowClone",
+  "author": "VoxScribe",
   "private": true,
   "scripts": {
     "dev": "electron-vite dev",
@@ -49,9 +49,9 @@
     "vitest": "^2.1.8"
   },
   "build": {
-    "appId": "com.flowclone.windows",
-    "productName": "FlowClone",
-    "copyright": "Copyright © 2026 FlowClone",
+    "appId": "com.voxscribe.windows",
+    "productName": "VoxScribe",
+    "copyright": "Copyright © 2026 VoxScribe",
     "npmRebuild": false,
     "directories": {
       "output": "dist"
@@ -70,14 +70,16 @@
           ]
         }
       ],
-      "icon": "resources/icon.png"
+      "icon": "resources/icon.png",
+      "publisherName": "VoxScribe",
+      "companyName": "VoxScribe"
     },
     "nsis": {
       "oneClick": false,
       "allowToChangeInstallationDirectory": true,
       "createDesktopShortcut": true,
       "createStartMenuShortcut": true,
-      "shortcutName": "FlowClone",
+      "shortcutName": "VoxScribe",
       "runAfterFinish": true,
       "include": "resources/installer.nsh"
     }

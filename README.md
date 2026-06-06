@@ -1,4 +1,4 @@
-# FlowClone Windows
+# VoxScribe Windows
 
 > System-wide voice dictation for Windows — inspired by Wispr Flow
 
@@ -110,7 +110,7 @@ src/
 │       ├── AudioRecordingService.ts
 │       └── DatabaseService.ts     # SQLite (better-sqlite3)
 ├── preload/
-│   ├── index.ts             # contextBridge API (window.flowAPI)
+│   ├── index.ts             # contextBridge API (window.voxScribeAPI)
 │   └── types.d.ts
 ├── renderer/                # React frontend
 │   ├── src/
@@ -173,7 +173,7 @@ npm test
 
 ## 🔌 Extensibility
 
-FlowClone is designed for future provider swapping:
+VoxScribe is designed for future provider swapping:
 
 - **`ITranscriptionProvider`** — Swap Groq for OpenAI, Gemini, or local Whisper
 - **`IAIEditor`** — Swap LLM backend for any model

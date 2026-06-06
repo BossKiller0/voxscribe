@@ -7,7 +7,7 @@ let storeInstance: Store<AppSettings> | null = null
 export function getSettingsStore(): Store<AppSettings> {
   if (!storeInstance) {
     storeInstance = new Store<AppSettings>({
-      name: 'flowclone-settings',
+      name: 'voxscribe-settings',
       defaults: DEFAULT_SETTINGS
     })
   }

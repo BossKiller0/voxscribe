@@ -133,7 +133,8 @@ export async function ensureValidApiKey(forceShow = false, initialErrorMsg = '')
       center: true,
       resizable: false,
       backgroundColor: '#0f0f14',
-      title: 'FlowClone - API Key Required',
+      title: 'VoxScribe - API Key Required',
+      icon: join(__dirname, '../../resources/icon.png'),
       webPreferences: {
         preload: join(__dirname, '../preload/index.js'),
         sandbox: false,
@@ -147,7 +148,7 @@ export async function ensureValidApiKey(forceShow = false, initialErrorMsg = '')
       <html>
       <head>
         <meta charset="utf-8">
-        <title>FlowClone - API Key Required</title>
+        <title>VoxScribe - API Key Required</title>
         <style>
           body {
             margin: 0;
@@ -268,7 +269,7 @@ export async function ensureValidApiKey(forceShow = false, initialErrorMsg = '')
             <div id="error-box" class="error-msg"></div>
           </div>
           <div class="footer">
-            <span class="link" onclick="window.flowAPI.openGroqConsole()">Get API Key from Groq console</span>
+            <span class="link" onclick="window.voxScribeAPI.openGroqConsole()">Get API Key from Groq console</span>
             <button class="btn" id="ok-btn">OK</button>
           </div>
         </div>
@@ -307,7 +308,7 @@ export async function ensureValidApiKey(forceShow = false, initialErrorMsg = '')
             btn.innerText = "Validating...";
  
             try {
-              const res = await window.flowAPI.submitApiKey(val);
+              const res = await window.voxScribeAPI.submitApiKey(val);
               if (res.success) {
                 // Success is handled by main closing the window
               } else {

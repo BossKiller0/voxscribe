@@ -29,19 +29,19 @@ export function FloatingMicOverlay() {
 
   // Listen for IPC events from main process
   useEffect(() => {
-    const unsubShow = window.flowAPI.onOverlayShow(() => setVisible(true))
-    const unsubHide = window.flowAPI.onOverlayHide(() => {
+    const unsubShow = window.voxScribeAPI.onOverlayShow(() => setVisible(true))
+    const unsubHide = window.voxScribeAPI.onOverlayHide(() => {
       setTimeout(() => setVisible(false), 350)
     })
 
-    const unsubRecording = window.flowAPI.onRecordingStateChange(async (state) => {
+    const unsubRecording = window.voxScribeAPI.onRecordingStateChange(async (state) => {
       if (state === 'listening') {
         setRecordingState('listening')
         await startRecording()
       }
     })
 
-    const unsubStop = window.flowAPI.onStopRecording(async () => {
+    const unsubStop = window.voxScribeAPI.onStopRecording(async () => {
       setRecordingState('processing')
       const result = await stopRecording()
 
@@ -52,7 +52,7 @@ export function FloatingMicOverlay() {
 
       try {
         const arrayBuffer = await result.blob.arrayBuffer()
-        const transcriptionResult = await window.flowAPI.transcribeAudio(arrayBuffer, result.format)
+        const transcriptionResult = await window.voxScribeAPI.transcribeAudio(arrayBuffer, result.format)
 
         if (transcriptionResult.success) {
           setRecordingState('inserting')

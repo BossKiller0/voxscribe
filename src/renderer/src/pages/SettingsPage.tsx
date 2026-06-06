@@ -300,7 +300,7 @@ export function SettingsPage() {
           <SectionHeader title="System" />
           <ToggleRow
             label="Launch at Windows Startup"
-            desc="Start FlowClone automatically when Windows boots"
+            desc="Start VoxScribe automatically when Windows boots"
             checked={settings.launchOnStartup}
             onChange={(v) => save({ launchOnStartup: v })}
           />

@@ -21,7 +21,7 @@ export const useHistoryStore = create<HistoryStore>((set, get) => ({
   loadHistory: async (query) => {
     set({ isLoading: true })
     try {
-      const entries = await window.flowAPI.getHistory(query)
+      const entries = await window.voxScribeAPI.getHistory(query)
       set({ entries, isLoading: false })
     } catch (err) {
       console.error('Failed to load history:', err)
@@ -35,12 +35,12 @@ export const useHistoryStore = create<HistoryStore>((set, get) => ({
   },
 
   deleteEntry: async (id) => {
-    await window.flowAPI.deleteHistory(id)
+    await window.voxScribeAPI.deleteHistory(id)
     set({ entries: get().entries.filter((e) => e.id !== id) })
   },
 
   clearHistory: async () => {
-    await window.flowAPI.clearHistory()
+    await window.voxScribeAPI.clearHistory()
     set({ entries: [] })
   },
 

@@ -31,7 +31,7 @@ export function PrivacyPage() {
     }
 
     try {
-      const validationResult = await window.flowAPI.submitApiKey(trimmedKey)
+      const validationResult = await window.voxScribeAPI.submitApiKey(trimmedKey)
       if (validationResult.success) {
         await updateSettings({ groqApiKey: trimmedKey })
         setSaveStatus('success')
@@ -129,7 +129,7 @@ export function PrivacyPage() {
               <button
                 onClick={async () => {
                   if (confirm('Are you sure you want to remove your API key? You will not be able to use the application or dictate text until a new valid Groq API key is provided.')) {
-                    await window.flowAPI.removeApiKey()
+                    await window.voxScribeAPI.removeApiKey()
                   }
                 }}
                 style={{
@@ -151,7 +151,7 @@ export function PrivacyPage() {
           </div>
           <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginTop: 8 }}>
             <span
-              onClick={() => window.flowAPI.openGroqConsole()}
+              onClick={() => window.voxScribeAPI.openGroqConsole()}
               style={{
                 fontSize: 11,
                 color: '#7c6ff7',
@@ -184,21 +184,21 @@ export function PrivacyPage() {
       title: 'Third-Party Services',
       color: '#f74f6e',
       content:
-        'FlowClone uses Groq API (groq.com) for speech-to-text (Whisper models) and AI text cleanup (LLaMA models). Please review Groq\'s privacy policy at groq.com/privacy.'
+        'VoxScribe uses Groq API (groq.com) for speech-to-text (Whisper models) and AI text cleanup (LLaMA models). Please review Groq\'s privacy policy at groq.com/privacy.'
     },
     {
       icon: '📋',
       title: 'Clipboard Access',
       color: '#00c8ff',
       content:
-        'FlowClone temporarily uses your clipboard to insert text at the cursor position. Your original clipboard content is restored within 300ms after insertion.'
+        'VoxScribe temporarily uses your clipboard to insert text at the cursor position. Your original clipboard content is restored within 300ms after insertion.'
     },
     {
       icon: '🚫',
       title: 'No Telemetry',
       color: '#a8a8c8',
       content:
-        'FlowClone does not collect any analytics, usage data, crash reports, or telemetry. Your usage is entirely private.'
+        'VoxScribe does not collect any analytics, usage data, crash reports, or telemetry. Your usage is entirely private.'
     }
   ]
 
@@ -208,7 +208,7 @@ export function PrivacyPage() {
         Privacy & Data
       </h1>
       <p style={{ fontSize: 14, color: '#8888a8', marginBottom: 32, lineHeight: 1.6 }}>
-        FlowClone is designed with your privacy in mind.
+        VoxScribe is designed with your privacy in mind.
       </p>
 
       {items.map((item) => (
@@ -241,7 +241,7 @@ export function PrivacyPage() {
         }}
       >
         <p style={{ fontSize: 13, color: '#8888a8', lineHeight: 1.6 }}>
-          <strong style={{ color: '#b8b4ff' }}>Open Source:</strong> FlowClone is open source. You can inspect all source code to verify how your data is handled.
+          <strong style={{ color: '#b8b4ff' }}>Open Source:</strong> VoxScribe is open source. You can inspect all source code to verify how your data is handled.
         </p>
       </div>
     </div>

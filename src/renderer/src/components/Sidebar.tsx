@@ -111,7 +111,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
             </svg>
           </div>
           <div>
-            <div style={{ fontSize: 15, fontWeight: 700, color: '#e8e8f0', lineHeight: 1.2 }}>FlowClone</div>
+            <div style={{ fontSize: 15, fontWeight: 700, color: '#e8e8f0', lineHeight: 1.2 }}>VoxScribe</div>
             <div style={{ fontSize: 11, color: '#555568', lineHeight: 1.2 }}>Voice Dictation</div>
           </div>
         </div>
@@ -170,7 +170,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
 
       {/* Version footer */}
       <div style={{ fontSize: 11, color: '#333345', textAlign: 'center', paddingTop: 12 }}>
-        FlowClone v1.0.0
+        VoxScribe v1.0.0
       </div>
     </aside>
   )
