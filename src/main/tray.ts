@@ -1,0 +1,111 @@
+import { Tray, Menu, nativeImage, BrowserWindow, app } from 'electron'
+import path from 'path'
+import { logger } from './logger'
+import { IPC } from '../shared/types'
+import { sendToOverlay } from './ipc/window.ipc'
+import { getIsRecording } from './hotkeys'
+
+let tray: Tray | null = null
+let dashboardWindow: BrowserWindow | null = null
+
+const ICON_SIZE = { width: 16, height: 16 }
+
+function createFallbackIcon(isRecording = false): Electron.NativeImage {
+  // Create a simple colored icon using raw pixel data
+  // Teal = idle, Red = recording
+  const size = 16
+  const data = Buffer.alloc(size * size * 4)
+  const r = isRecording ? 220 : 0
+  const g = isRecording ? 50 : 210
+  const b = isRecording ? 50 : 190
+
+  for (let i = 0; i < size * size; i++) {
+    const offset = i * 4
+    data[offset] = r
+    data[offset + 1] = g
+    data[offset + 2] = b
+    data[offset + 3] = 255
+  }
+
+  return nativeImage.createFromBuffer(data, { width: size, height: size })
+}
+
+export function createTray(dashboard: BrowserWindow): Tray {
+  dashboardWindow = dashboard
+
+  const icon = createFallbackIcon(false)
+  tray = new Tray(icon)
+  tray.setToolTip('FlowClone — Voice Dictation\nPress Ctrl+Alt+Space to dictate')
+
+  updateTrayMenu()
+
+  tray.on('click', () => {
+    if (dashboardWindow) {
+      if (dashboardWindow.isVisible()) {
+        dashboardWindow.hide()
+      } else {
+        dashboardWindow.show()
+        dashboardWindow.focus()
+      }
+    }
+  })
+
+  logger.info('[Tray] System tray created')
+  return tray
+}
+
+export function updateTrayMenu(): void {
+  if (!tray) return
+
+  const recording = getIsRecording()
+
+  const contextMenu = Menu.buildFromTemplate([
+    {
+      label: recording ? '🔴 Stop Dictation' : '🎙️ Start Dictation (Ctrl+Alt+Space)',
+      click: () => {
+        sendToOverlay(recording ? IPC.AUDIO_STOP_RECORDING : IPC.STATE_RECORDING_CHANGED, recording ? undefined : 'listening')
+      }
+    },
+    { type: 'separator' },
+    {
+      label: '📊 Open Dashboard',
+      click: () => {
+        dashboardWindow?.show()
+        dashboardWindow?.focus()
+      }
+    },
+    {
+      label: '⚙️ Settings',
+      click: () => {
+        dashboardWindow?.show()
+        dashboardWindow?.focus()
+        dashboardWindow?.webContents.send('navigate', '/settings')
+      }
+    },
+    { type: 'separator' },
+    {
+      label: `FlowClone v${app.getVersion()}`,
+      enabled: false
+    },
+    {
+      label: '❌ Exit',
+      click: () => {
+        app.quit()
+      }
+    }
+  ])
+
+  tray.setContextMenu(contextMenu)
+}
+
+export function setTrayRecordingState(isRecording: boolean): void {
+  if (!tray) return
+  const icon = createFallbackIcon(isRecording)
+  tray.setImage(icon)
+  tray.setToolTip(
+    isRecording
+      ? '🔴 FlowClone — Recording... (Ctrl+Alt+Space to stop)'
+      : '🎙️ FlowClone — Press Ctrl+Alt+Space to dictate'
+  )
+  updateTrayMenu()
+}
