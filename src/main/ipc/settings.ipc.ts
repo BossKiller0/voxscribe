@@ -23,6 +23,18 @@ export function registerSettingsIPC(): void {
         process.env.GROQ_API_KEY = updates.groqApiKey
       }
     }
+    if ('launchOnStartup' in updates) {
+      const { app } = require('electron')
+      try {
+        app.setLoginItemSettings({
+          openAtLogin: !!updates.launchOnStartup,
+          path: app.getPath('exe')
+        })
+        logger.info(`[IPC:settings] Set login item settings: ${updates.launchOnStartup}`)
+      } catch (err: any) {
+        logger.error(`[IPC:settings] Failed to set login item settings: ${err.message}`)
+      }
+    }
     logger.info(`[IPC:settings] Updated: ${Object.keys(updates).join(', ')}`)
     return true
   })

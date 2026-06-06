@@ -144,6 +144,20 @@ app.whenReady().then(async () => {
   // Set app user model id for Windows
   electronApp.setAppUserModelId('com.flowclone.windows')
 
+  // Sync login item settings with launchOnStartup setting
+  try {
+    const { getSettingsStore } = require('./store')
+    const store = getSettingsStore()
+    const launchOnStartup = store.get('launchOnStartup')
+    app.setLoginItemSettings({
+      openAtLogin: !!launchOnStartup,
+      path: app.getPath('exe')
+    })
+    logger.info(`[App] Synced login item settings: ${launchOnStartup}`)
+  } catch (err: any) {
+    logger.error(`[App] Failed to sync login item settings: ${err.message}`)
+  }
+
   // Open DevTools with F12, ignore default shortcuts in dev
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
