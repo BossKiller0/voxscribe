@@ -32,7 +32,8 @@ function getGroqService(): GroqSpeechService {
 
 function getAIEditor(): AIEditorService {
   if (!aiEditor) {
-    aiEditor = new AIEditorService()
+    const settings = getSettingsStore()
+    aiEditor = new AIEditorService(settings.get('aiCleanupMode') === 'accurate')
   }
   return aiEditor
 }

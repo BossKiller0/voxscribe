@@ -35,16 +35,24 @@ const COMMAND_PROMPTS: Record<string, (text: string, lang?: string) => string> =
 
 export class AIEditorService implements IAIEditor {
   private client: Groq
-  private model: string
+  private fastModel: string
+  private accurateModel: string
+  private useAccurateMode: boolean
 
-  constructor() {
+  constructor(useAccurateMode = false) {
     const apiKey = getSettingsStore().get('groqApiKey') || process.env.GROQ_API_KEY
     if (!apiKey) {
       throw new Error('Groq API Key is not set in settings or environment')
     }
     this.client = new Groq({ apiKey })
-    this.model = process.env.GROQ_EDITOR_MODEL || 'llama-3.3-70b-versatile'
-    logger.info(`[AIEditor] Initialized with model: ${this.model}`)
+    this.fastModel = process.env.GROQ_EDITOR_MODEL_FAST || 'llama-3.1-8b-instant'
+    this.accurateModel = process.env.GROQ_EDITOR_MODEL_ACCURATE || process.env.GROQ_EDITOR_MODEL || 'llama-3.3-70b-versatile'
+    this.useAccurateMode = useAccurateMode
+    logger.info(`[AIEditor] Initialized. Fast=${this.fastModel}, Accurate=${this.accurateModel}`)
+  }
+
+  get currentModel(): string {
+    return this.useAccurateMode ? this.accurateModel : this.fastModel
   }
 
   async cleanupTranscript(
@@ -65,13 +73,13 @@ export class AIEditorService implements IAIEditor {
 3. Double quotation marks should ONLY be inserted where necessary (e.g., around direct quotes or speech).
 4. No text should be altered unless it is a grammatical or ethical mistake.
 5. Remove filler words (uh, um, ah, like, you know, basically, literally, right, so, well)
-6. Return ONLY the cleaned text, nothing else. Do not include any introductory or concluding comments.${vocabNote}`
+6. Return ONLY the cleaned text, nothing else. Do not include any introductory or concluding comments. Do NOT wrap the entire output in quotation marks unless they were explicitly spoken.${vocabNote}`
 
-    const userPrompt = `Clean up this transcribed speech:\n\n"${text}"`
+    const userPrompt = `Clean up this transcribed speech:\n\n${text}`
 
     try {
       const response = await this.client.chat.completions.create({
-        model: this.model,
+        model: this.currentModel,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
@@ -80,7 +88,16 @@ export class AIEditorService implements IAIEditor {
         max_tokens: 2048
       })
 
-      const cleaned = response.choices[0]?.message?.content?.trim() || text
+      let cleaned = response.choices[0]?.message?.content?.trim() || text
+      
+      // Strip outer quotes if they were added by the model and were not in the original text
+      if (cleaned.startsWith('"') && cleaned.endsWith('"') && !text.startsWith('"') && !text.endsWith('"')) {
+        cleaned = cleaned.slice(1, -1).trim()
+      }
+      if (cleaned.startsWith('“') && cleaned.endsWith('”') && !text.startsWith('“') && !text.endsWith('”')) {
+        cleaned = cleaned.slice(1, -1).trim()
+      }
+      
       logger.info(`[AIEditor] Cleaned transcript: "${text.substring(0, 50)}..." → "${cleaned.substring(0, 50)}..."`)
       return cleaned
     } catch (err: any) {
@@ -104,7 +121,7 @@ export class AIEditorService implements IAIEditor {
 
     try {
       const response = await this.client.chat.completions.create({
-        model: this.model,
+        model: this.currentModel,
         messages: [
           {
             role: 'system',
@@ -127,7 +144,7 @@ export class AIEditorService implements IAIEditor {
   async rewrite(text: string, instruction: string): Promise<string> {
     try {
       const response = await this.client.chat.completions.create({
-        model: this.model,
+        model: this.currentModel,
         messages: [
           {
             role: 'system',

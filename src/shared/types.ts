@@ -34,6 +34,7 @@ export interface AppSettings {
 
   // AI Cleanup
   aiCleanupEnabled: boolean
+  aiCleanupMode: 'fast' | 'accurate'
   writingStyle: WritingStyle
 
   // Insertion
@@ -67,6 +68,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   transcriptionMode: 'fast',
   language: 'auto',
   aiCleanupEnabled: true,
+  aiCleanupMode: 'fast',
   writingStyle: 'professional',
   clipboardInsertionEnabled: true,
   insertionDelayMs: 150,

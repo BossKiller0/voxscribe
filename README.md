@@ -37,19 +37,23 @@ cd VoicetoText
 npm install
 ```
 
-### 3. Configure Environment
+### 3. Configure Environment (Optional)
+
+Creating a `.env` file is completely optional. By default, the application will ask for your **Groq API Key** in the user interface when it first launches, so no technical file configuration is required.
+
+If you wish to override the default model selections for transcription or AI cleanup, create a `.env` file:
 
 ```bash
 cp .env.example .env
 ```
 
-Edit `.env`:
+Edit `.env` to override any models:
 
 ```env
-GROQ_API_KEY=your_groq_api_key_here
 GROQ_SPEECH_MODEL_FAST=whisper-large-v3-turbo
 GROQ_SPEECH_MODEL_ACCURATE=whisper-large-v3
-GROQ_EDITOR_MODEL=llama-3.3-70b-versatile
+GROQ_EDITOR_MODEL_FAST=llama-3.1-8b-instant
+GROQ_EDITOR_MODEL_ACCURATE=llama-3.3-70b-versatile
 ```
 
 ### 4. Run in Development
@@ -58,7 +62,7 @@ GROQ_EDITOR_MODEL=llama-3.3-70b-versatile
 npm run dev
 ```
 
-The app launches and appears in your **system tray** (bottom-right of taskbar).
+The app launches and appears in your **system tray** (bottom-right of taskbar). On first launch, it will guide you to input your Groq API key.
 
 ---
 
@@ -140,10 +144,10 @@ src/
 
 | Variable | Required | Default | Description |
 |----------|----------|---------|-------------|
-| `GROQ_API_KEY` | ✅ | — | Your Groq API key |
 | `GROQ_SPEECH_MODEL_FAST` | ❌ | `whisper-large-v3-turbo` | Fast transcription model |
 | `GROQ_SPEECH_MODEL_ACCURATE` | ❌ | `whisper-large-v3` | Accurate transcription model |
-| `GROQ_EDITOR_MODEL` | ❌ | `llama-3.3-70b-versatile` | AI cleanup/rewrite model |
+| `GROQ_EDITOR_MODEL_FAST` | ❌ | `llama-3.1-8b-instant` | Fast AI cleanup model |
+| `GROQ_EDITOR_MODEL_ACCURATE` | ❌ | `llama-3.3-70b-versatile` | Accurate AI cleanup model |
 
 ---
 

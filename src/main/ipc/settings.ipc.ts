@@ -17,7 +17,7 @@ export function registerSettingsIPC(): void {
     for (const [key, value] of Object.entries(updates)) {
       store.set(key as keyof AppSettings, value)
     }
-    if ('groqApiKey' in updates) {
+    if ('groqApiKey' in updates || 'transcriptionMode' in updates || 'aiCleanupMode' in updates) {
       resetGroqServices()
       if (updates.groqApiKey) {
         process.env.GROQ_API_KEY = updates.groqApiKey
