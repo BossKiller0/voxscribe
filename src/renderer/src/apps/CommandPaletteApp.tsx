@@ -99,7 +99,7 @@ export function CommandPaletteApp() {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && query) execute(query)
-              if (e.key === 'Escape') window.close()
+              if (e.key === 'Escape') window.flowAPI.closeCommandPalette()
             }}
             style={{
               flex: 1,

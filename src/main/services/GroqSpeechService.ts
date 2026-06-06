@@ -4,6 +4,7 @@ import path from 'path'
 import { logger } from '../logger'
 import type { ITranscriptionProvider } from './interfaces'
 import type { TranscriptionResult } from '../../shared/types'
+import { getSettingsStore } from '../store'
 
 const MAX_RETRIES = 3
 const RETRY_DELAY_MS = 1000
@@ -15,9 +16,9 @@ export class GroqSpeechService implements ITranscriptionProvider {
   private useAccurateMode: boolean
 
   constructor(useAccurateMode = false) {
-    const apiKey = process.env.GROQ_API_KEY
+    const apiKey = getSettingsStore().get('groqApiKey') || process.env.GROQ_API_KEY
     if (!apiKey) {
-      throw new Error('GROQ_API_KEY environment variable is not set')
+      throw new Error('Groq API Key is not set in settings or environment')
     }
     this.client = new Groq({ apiKey })
     this.fastModel = process.env.GROQ_SPEECH_MODEL_FAST || 'whisper-large-v3-turbo'

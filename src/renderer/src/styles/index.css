@@ -105,3 +105,10 @@ html, body {
 .glow-recording { animation: recording-glow 1.5s ease-in-out infinite; }
 .animate-slide-up { animation: slide-up 0.3s ease forwards; }
 .animate-fade-in { animation: fade-in 0.2s ease forwards; }
+
+/* Enforce absolute transparency for overlay window */
+html.overlay-page, body.overlay-body {
+  background: transparent !important;
+  background-color: transparent !important;
+  box-shadow: none !important;
+}

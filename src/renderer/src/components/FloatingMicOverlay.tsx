@@ -20,6 +20,12 @@ export function FloatingMicOverlay() {
   const [visible, setVisible] = useState(true)
 
   const config = STATE_CONFIG[recordingState]
+  const isIdle = recordingState === 'idle'
+  const isProcessing = recordingState === 'processing'
+  const isInserting = recordingState === 'inserting'
+  const isError = recordingState === 'error'
+
+  const size = isIdle ? 6 : 24
 
   // Listen for IPC events from main process
   useEffect(() => {
@@ -78,120 +84,103 @@ export function FloatingMicOverlay() {
       className="fixed inset-0 flex items-center justify-center"
       style={{
         fontFamily: "'Inter', sans-serif",
-        WebkitFontSmoothing: 'antialiased'
+        WebkitFontSmoothing: 'antialiased',
+        pointerEvents: 'none'
       }}
     >
-      {/* Backdrop */}
+      {/* Circle / Dot Widget Container */}
       <div
-        className="absolute inset-0"
-        style={{ background: 'transparent' }}
-      />
-
-      {/* Main overlay card */}
-      <div
-        className="relative flex items-center gap-3 px-5 py-3 rounded-2xl animate-slide-up"
         style={{
-          background: 'rgba(15, 15, 20, 0.92)',
-          backdropFilter: 'blur(24px)',
-          WebkitBackdropFilter: 'blur(24px)',
-          border: `1px solid ${config.color}30`,
-          boxShadow: `0 8px 32px rgba(0,0,0,0.4), 0 0 24px ${config.color}20`,
-          minWidth: 220
+          width: size,
+          height: size,
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          position: 'relative',
+          pointerEvents: 'none'
         }}
       >
-        {/* Mic icon with state rings */}
-        <div className="relative flex-shrink-0">
-          {/* Pulse rings for listening state */}
-          {isListening && (
-            <>
-              <div
-                className="absolute inset-0 rounded-full"
-                style={{
-                  background: config.color,
-                  opacity: 0.2,
-                  animation: 'pulse-ring 1.5s ease-out infinite'
-                }}
-              />
-              <div
-                className="absolute inset-0 rounded-full"
-                style={{
-                  background: config.color,
-                  opacity: 0.15,
-                  animation: 'pulse-ring 1.5s ease-out 0.5s infinite'
-                }}
-              />
-            </>
-          )}
-
-          {/* Mic circle */}
+        {/* Idle Dot */}
+        {isIdle && (
           <div
-            className="w-10 h-10 rounded-full flex items-center justify-center relative z-10"
             style={{
-              background: config.bg,
-              border: `1.5px solid ${config.color}60`,
-              animation: isListening ? 'pulse-dot 1s ease-in-out infinite' : undefined
+              width: '100%',
+              height: '100%',
+              borderRadius: '50%',
+              background: 'rgba(124, 111, 247, 0.25)',
+              pointerEvents: 'none'
             }}
-          >
-            {recordingState === 'processing' ? (
-              <ProcessingSpinner color={config.color} />
-            ) : recordingState === 'inserting' ? (
-              <CheckIcon color={config.color} />
-            ) : recordingState === 'error' ? (
-              <ErrorIcon />
-            ) : (
-              <MicIcon color={config.color} isActive={isListening} />
-            )}
-          </div>
-        </div>
+          />
+        )}
 
-        {/* Text + waveform */}
-        <div className="flex flex-col gap-0.5 flex-1">
-          <span
-            className="text-sm font-semibold leading-tight"
-            style={{ color: config.color }}
-          >
-            {recordingState === 'error' && lastError
-              ? lastError.substring(0, 35)
-              : config.label}
-          </span>
+        {/* Pulsing Background Circle for active states */}
+        {!isIdle && (
+          <div
+            style={{
+               position: 'absolute',
+              width: '100%',
+              height: '100%',
+              borderRadius: '50%',
+              background: config.bg,
+              border: `1.5px solid ${config.color}`,
+              boxShadow: `0 4px 12px rgba(0,0,0,0.3), 0 0 8px ${config.color}25`,
+              pointerEvents: 'none',
+              zIndex: 0
+            }}
+          />
+        )}
 
-          {isListening && (
-            <div className="flex items-end gap-0.5 h-4">
-              {Array.from({ length: 12 }).map((_, i) => (
-                <div
-                  key={i}
-                  className="rounded-full"
-                  style={{
-                    width: 2,
-                    background: config.color,
-                    opacity: 0.7,
-                    height: `${Math.max(20, Math.min(100, level * (0.5 + Math.sin(i * 0.8) * 0.5)))}%`,
-                    animation: `waveform ${0.6 + i * 0.08}s ease-in-out infinite`,
-                    animationDelay: `${i * 0.05}s`
-                  }}
-                />
-              ))}
-            </div>
-          )}
+        {/* Ripple rings pulsing outwards behind/around the circle */}
+        {isListening && (
+          <>
+            <style>{`
+              @keyframes ripple-pulse {
+                0% {
+                  transform: scale(1);
+                  opacity: 0.5;
+                }
+                100% {
+                  transform: scale(1.4);
+                  opacity: 0;
+                }
+              }
+            `}</style>
+            <div
+              style={{
+                position: 'absolute',
+                width: '100%',
+                height: '100%',
+                borderRadius: '50%',
+                border: `1.5px solid ${config.color}`,
+                animation: 'ripple-pulse 1.8s cubic-bezier(0.215, 0.610, 0.355, 1) infinite',
+                pointerEvents: 'none',
+                opacity: 0,
+                zIndex: 1
+              }}
+            />
+            <div
+              style={{
+                position: 'absolute',
+                width: '100%',
+                height: '100%',
+                borderRadius: '50%',
+                border: `1.5px solid ${config.color}`,
+                animation: 'ripple-pulse 1.8s cubic-bezier(0.215, 0.610, 0.355, 1) infinite',
+                animationDelay: '0.6s',
+                pointerEvents: 'none',
+                opacity: 0,
+                zIndex: 1
+              }}
+            />
+          </>
+        )}
 
-          {recordingState === 'processing' && (
-            <span style={{ color: 'rgba(255,255,255,0.4)', fontSize: 11 }}>
-              Transcribing audio...
-            </span>
-          )}
-        </div>
-
-        {/* Hotkey badge */}
-        <div
-          className="flex-shrink-0 px-2 py-1 rounded-md text-xs font-mono"
-          style={{
-            background: 'rgba(255,255,255,0.05)',
-            color: 'rgba(255,255,255,0.3)',
-            border: '1px solid rgba(255,255,255,0.08)',
-            fontSize: 10
-          }}
-        >
-          ⌃⌥Space
+        {/* Static Inner Icons in Foreground */}
+        <div style={{ position: 'relative', zIndex: 2, display: 'flex', alignItems: 'center', justifyContent: 'center' }}>
+          {isListening && <MicIcon color={config.color} isActive={true} />}
+          {isProcessing && <ProcessingSpinner color={config.color} />}
+          {isInserting && <CheckIcon color={config.color} />}
+          {isError && <ErrorIcon />}
         </div>
       </div>
     </div>
@@ -200,7 +189,7 @@ export function FloatingMicOverlay() {
 
 function MicIcon({ color, isActive }: { color: string; isActive: boolean }) {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
       <rect x="9" y="2" width="6" height="12" rx="3" fill={color} opacity={isActive ? 1 : 0.7} />
       <path
         d="M5 10c0 3.866 3.134 7 7 7s7-3.134 7-7"
@@ -217,7 +206,7 @@ function MicIcon({ color, isActive }: { color: string; isActive: boolean }) {
 
 function ProcessingSpinner({ color }: { color: string }) {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="12" r="9" stroke={color} strokeWidth="2.5" strokeOpacity="0.25" />
       <path
         d="M12 3a9 9 0 0 1 9 9"
@@ -231,20 +220,23 @@ function ProcessingSpinner({ color }: { color: string }) {
   )
 }
 
+// Success checkmark icon (12x12)
 function CheckIcon({ color }: { color: string }) {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
       <polyline points="20 6 9 17 4 12" stroke={color} strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round" />
     </svg>
   )
 }
 
+// Error warning icon (12x12)
 function ErrorIcon() {
   return (
-    <svg width="16" height="16" viewBox="0 0 24 24" fill="none">
+    <svg width="12" height="12" viewBox="0 0 24 24" fill="none">
       <circle cx="12" cy="12" r="9" stroke="#ff3b30" strokeWidth="2" />
       <line x1="12" y1="8" x2="12" y2="13" stroke="#ff3b30" strokeWidth="2" strokeLinecap="round" />
       <circle cx="12" cy="16" r="1" fill="#ff3b30" />
     </svg>
   )
 }
+

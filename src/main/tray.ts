@@ -30,17 +30,34 @@ function createFallbackIcon(isRecording = false): Electron.NativeImage {
   return nativeImage.createFromBuffer(data, { width: size, height: size })
 }
 
+function getTrayIcon(isRecording = false): Electron.NativeImage {
+  const iconName = isRecording ? 'tray-recording.png' : 'tray.png'
+  const iconPath = path.join(__dirname, `../../resources/${iconName}`)
+
+  try {
+    const image = nativeImage.createFromPath(iconPath)
+    if (image.isEmpty()) {
+      logger.warn(`[Tray] Icon at ${iconPath} is empty, using fallback.`)
+      return createFallbackIcon(isRecording)
+    }
+    return image.resize(ICON_SIZE)
+  } catch (err: any) {
+    logger.error(`[Tray] Failed to load tray icon: ${err.message}`)
+    return createFallbackIcon(isRecording)
+  }
+}
+
 export function createTray(dashboard: BrowserWindow): Tray {
   dashboardWindow = dashboard
 
-  const icon = createFallbackIcon(false)
+  const icon = getTrayIcon(false)
   tray = new Tray(icon)
-  tray.setToolTip('FlowClone — Voice Dictation\nPress Ctrl+Alt+Space to dictate')
+  tray.setToolTip('FlowClone — Voice Dictation\nHold Ctrl+Shift to dictate')
 
   updateTrayMenu()
 
   tray.on('click', () => {
-    if (dashboardWindow) {
+    if (dashboardWindow && !dashboardWindow.isDestroyed()) {
       if (dashboardWindow.isVisible()) {
         dashboardWindow.hide()
       } else {
@@ -61,7 +78,7 @@ export function updateTrayMenu(): void {
 
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: recording ? '🔴 Stop Dictation' : '🎙️ Start Dictation (Ctrl+Alt+Space)',
+      label: recording ? '🔴 Stop Dictation' : '🎙️ Start Dictation (Ctrl+Shift)',
       click: () => {
         sendToOverlay(recording ? IPC.AUDIO_STOP_RECORDING : IPC.STATE_RECORDING_CHANGED, recording ? undefined : 'listening')
       }
@@ -70,16 +87,20 @@ export function updateTrayMenu(): void {
     {
       label: '📊 Open Dashboard',
       click: () => {
-        dashboardWindow?.show()
-        dashboardWindow?.focus()
+        if (dashboardWindow && !dashboardWindow.isDestroyed()) {
+          dashboardWindow.show()
+          dashboardWindow.focus()
+        }
       }
     },
     {
       label: '⚙️ Settings',
       click: () => {
-        dashboardWindow?.show()
-        dashboardWindow?.focus()
-        dashboardWindow?.webContents.send('navigate', '/settings')
+        if (dashboardWindow && !dashboardWindow.isDestroyed()) {
+          dashboardWindow.show()
+          dashboardWindow.focus()
+          dashboardWindow.webContents.send('navigate', '/settings')
+        }
       }
     },
     { type: 'separator' },
@@ -98,14 +119,22 @@ export function updateTrayMenu(): void {
   tray.setContextMenu(contextMenu)
 }
 
+export function destroyTray(): void {
+  if (tray) {
+    tray.destroy()
+    tray = null
+    logger.info('[Tray] System tray destroyed')
+  }
+}
+
 export function setTrayRecordingState(isRecording: boolean): void {
   if (!tray) return
-  const icon = createFallbackIcon(isRecording)
+  const icon = getTrayIcon(isRecording)
   tray.setImage(icon)
   tray.setToolTip(
     isRecording
-      ? '🔴 FlowClone — Recording... (Ctrl+Alt+Space to stop)'
-      : '🎙️ FlowClone — Press Ctrl+Alt+Space to dictate'
+      ? '🔴 FlowClone — Recording... (Release Ctrl+Shift to stop)'
+      : '🎙️ FlowClone — Hold Ctrl+Shift to dictate'
   )
   updateTrayMenu()
 }

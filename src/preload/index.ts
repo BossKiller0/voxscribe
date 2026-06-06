@@ -71,6 +71,15 @@ const flowAPI = {
   minimizeToDashboard: (): Promise<void> =>
     ipcRenderer.invoke(IPC.WINDOW_MINIMIZE),
 
+  maximizeWindow: (): Promise<void> =>
+    ipcRenderer.invoke('window:maximize'),
+
+  closeWindow: (): Promise<void> =>
+    ipcRenderer.invoke('window:close'),
+
+  closeCommandPalette: (): Promise<void> =>
+    ipcRenderer.invoke('window:close-command-palette'),
+
   getVersion: (): Promise<string> =>
     ipcRenderer.invoke(IPC.APP_GET_VERSION),
 
@@ -108,6 +117,9 @@ const flowAPI = {
 
   submitApiKey: (key: string): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('api-key:submit', key),
+
+  removeApiKey: (): Promise<{ success: boolean }> =>
+    ipcRenderer.invoke('api-key:remove'),
 
   openGroqConsole: (): Promise<void> =>
     ipcRenderer.invoke('api-key:open-console')

@@ -2,7 +2,7 @@ import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import dotenv from 'dotenv'
-import { createTray } from './tray'
+import { createTray, destroyTray } from './tray'
 import { registerHotkeys, unregisterHotkeys } from './hotkeys'
 import { registerAudioIPC } from './ipc/audio.ipc'
 import { registerSettingsIPC } from './ipc/settings.ipc'
@@ -11,7 +11,7 @@ import { registerSnippetsIPC } from './ipc/snippets.ipc'
 import { registerVocabularyIPC } from './ipc/vocabulary.ipc'
 import { registerWindowIPC, setWindowRefs } from './ipc/window.ipc'
 import { DatabaseService } from './services/DatabaseService'
-import { ensureValidApiKey } from './services/ApiKeyService'
+import { ensureValidApiKey, registerApiKeyIPC } from './services/ApiKeyService'
 import { logger } from './logger'
 
 // Load environment variables from .env
@@ -20,6 +20,7 @@ dotenv.config()
 let dashboardWindow: BrowserWindow | null = null
 let overlayWindow: BrowserWindow | null = null
 let commandPaletteWindow: BrowserWindow | null = null
+let isQuitting = false
 
 function createDashboardWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -28,7 +29,7 @@ function createDashboardWindow(): BrowserWindow {
     minWidth: 800,
     minHeight: 600,
     show: false,
-    frame: true,
+    frame: false,
     titleBarStyle: 'hidden',
     backgroundColor: '#0f0f14',
     icon: join(__dirname, '../../resources/icon.png'),
@@ -45,6 +46,9 @@ function createDashboardWindow(): BrowserWindow {
   })
 
   win.on('close', (e) => {
+    if (isQuitting) {
+      return
+    }
     // Hide instead of closing so the app stays in tray
     e.preventDefault()
     win.hide()
@@ -65,9 +69,12 @@ function createDashboardWindow(): BrowserWindow {
 }
 
 function createOverlayWindow(): BrowserWindow {
+  const winWidth = 100
+  const winHeight = 100
+
   const win = new BrowserWindow({
-    width: 280,
-    height: 100,
+    width: winWidth,
+    height: winHeight,
     show: false,
     frame: false,
     transparent: true,
@@ -77,6 +84,7 @@ function createOverlayWindow(): BrowserWindow {
     focusable: false, // Don't steal focus from target window
     hasShadow: false,
     type: 'toolbar',
+    icon: join(__dirname, '../../resources/icon.png'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
@@ -85,10 +93,15 @@ function createOverlayWindow(): BrowserWindow {
     }
   })
 
-  // Position at bottom-right of primary display
+  // Centered at the bottom-middle of the primary display
   const { screen } = require('electron')
   const { width, height } = screen.getPrimaryDisplay().workAreaSize
-  win.setPosition(width - 300, height - 120)
+  const x = Math.round((width - winWidth) / 2)
+  const y = Math.round(height - winHeight - 20) // 20px above the taskbar/bottom area
+  win.setPosition(x, y)
+
+  // Make the overlay window click-through
+  win.setIgnoreMouseEvents(true)
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     win.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/overlay.html`)
@@ -109,6 +122,7 @@ function createCommandPaletteWindow(): BrowserWindow {
     alwaysOnTop: true,
     center: true,
     resizable: false,
+    icon: join(__dirname, '../../resources/icon.png'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
@@ -130,6 +144,20 @@ app.whenReady().then(async () => {
   // Set app user model id for Windows
   electronApp.setAppUserModelId('com.flowclone.windows')
 
+  // Sync login item settings with launchOnStartup setting
+  try {
+    const { getSettingsStore } = require('./store')
+    const store = getSettingsStore()
+    const launchOnStartup = store.get('launchOnStartup')
+    app.setLoginItemSettings({
+      openAtLogin: !!launchOnStartup,
+      path: app.getPath('exe')
+    })
+    logger.info(`[App] Synced login item settings: ${launchOnStartup}`)
+  } catch (err: any) {
+    logger.error(`[App] Failed to sync login item settings: ${err.message}`)
+  }
+
   // Open DevTools with F12, ignore default shortcuts in dev
   app.on('browser-window-created', (_, window) => {
     optimizer.watchWindowShortcuts(window)
@@ -143,6 +171,9 @@ app.whenReady().then(async () => {
     logger.error(`[App] Database initialization failed: ${err.message}`)
   }
 
+  // Register API key IPC handlers
+  registerApiKeyIPC()
+
   // Ensure valid API Key exists before proceeding
   await ensureValidApiKey()
 
@@ -151,8 +182,13 @@ app.whenReady().then(async () => {
   overlayWindow = createOverlayWindow()
   commandPaletteWindow = createCommandPaletteWindow()
 
+  // Show the overlay window inactive immediately so the idle dot is visible
+  if (overlayWindow) {
+    overlayWindow.showInactive()
+  }
+
   // Wire window refs for IPC
-  setWindowRefs(dashboardWindow, overlayWindow)
+  setWindowRefs(dashboardWindow, overlayWindow, commandPaletteWindow)
 
   // Create system tray
   createTray(dashboardWindow)
@@ -172,7 +208,7 @@ app.whenReady().then(async () => {
   pruneOldHistory()
 
   logger.info('✅ FlowClone Windows started successfully')
-  logger.info(`📝 Press Ctrl+Alt+Space to start dictating`)
+  logger.info(`📝 Hold Ctrl+Shift to start dictating`)
 })
 
 app.on('window-all-closed', () => {
@@ -182,8 +218,13 @@ app.on('window-all-closed', () => {
   }
 })
 
+app.on('before-quit', () => {
+  isQuitting = true
+})
+
 app.on('will-quit', () => {
   unregisterHotkeys()
+  destroyTray()
   logger.info('[App] Shutting down')
 })
 

@@ -201,28 +201,58 @@ export function SettingsPage() {
           />
           {settings.aiCleanupEnabled && (
             <div style={{ marginTop: 16 }}>
-              <label style={{ fontSize: 13, color: '#8888a8', marginBottom: 10, display: 'block' }}>Writing Style</label>
-              <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10 }}>
-                {STYLES.map((s) => (
-                  <button
-                    key={s.value}
-                    onClick={() => save({ writingStyle: s.value })}
-                    style={{
-                      padding: '12px 14px',
-                      borderRadius: 10,
-                      border: `1px solid ${settings.writingStyle === s.value ? 'rgba(124,111,247,0.4)' : 'rgba(255,255,255,0.07)'}`,
-                      background: settings.writingStyle === s.value ? 'rgba(124,111,247,0.12)' : 'rgba(28,28,40,0.5)',
-                      cursor: 'pointer',
-                      textAlign: 'left',
-                      fontFamily: 'inherit'
-                    }}
-                  >
-                    <div style={{ fontSize: 13, fontWeight: 600, color: settings.writingStyle === s.value ? '#b8b4ff' : '#c8c8d8', marginBottom: 3 }}>
-                      {s.label}
-                    </div>
-                    <div style={{ fontSize: 11, color: '#555568', lineHeight: 1.4 }}>{s.desc}</div>
-                  </button>
-                ))}
+              <div style={{ marginBottom: 20 }}>
+                <label style={{ fontSize: 13, color: '#8888a8', marginBottom: 10, display: 'block' }}>Model</label>
+                <div style={{ display: 'flex', gap: 10 }}>
+                  {(['fast', 'accurate'] as ('fast' | 'accurate')[]).map((mode) => (
+                    <button
+                      key={mode}
+                      onClick={() => save({ aiCleanupMode: mode })}
+                      style={{
+                        padding: '9px 20px',
+                        borderRadius: 8,
+                        border: `1px solid ${settings.aiCleanupMode === mode ? 'rgba(124,111,247,0.5)' : 'rgba(255,255,255,0.08)'}`,
+                        background: settings.aiCleanupMode === mode ? 'rgba(124,111,247,0.15)' : 'transparent',
+                        color: settings.aiCleanupMode === mode ? '#b8b4ff' : '#8888a8',
+                        fontSize: 13,
+                        fontWeight: settings.aiCleanupMode === mode ? 600 : 400,
+                        cursor: 'pointer',
+                        fontFamily: 'inherit'
+                      }}
+                    >
+                      {mode === 'fast' ? '⚡ Fast Mode' : '🎯 Accurate Mode'}
+                    </button>
+                  ))}
+                </div>
+                <p style={{ fontSize: 11, color: '#555568', marginTop: 8 }}>
+                  Fast: llama-3.1-8b-instant · Accurate: llama-3.3-70b-versatile
+                </p>
+              </div>
+
+              <div style={{ marginBottom: 16 }}>
+                <label style={{ fontSize: 13, color: '#8888a8', marginBottom: 10, display: 'block' }}>Writing Style</label>
+                <div style={{ display: 'grid', gridTemplateColumns: 'repeat(auto-fill, minmax(160px, 1fr))', gap: 10 }}>
+                  {STYLES.map((s) => (
+                    <button
+                      key={s.value}
+                      onClick={() => save({ writingStyle: s.value })}
+                      style={{
+                        padding: '12px 14px',
+                        borderRadius: 10,
+                        border: `1px solid ${settings.writingStyle === s.value ? 'rgba(124,111,247,0.4)' : 'rgba(255,255,255,0.07)'}`,
+                        background: settings.writingStyle === s.value ? 'rgba(124,111,247,0.12)' : 'rgba(28,28,40,0.5)',
+                        cursor: 'pointer',
+                        textAlign: 'left',
+                        fontFamily: 'inherit'
+                      }}
+                    >
+                      <div style={{ fontSize: 13, fontWeight: 600, color: settings.writingStyle === s.value ? '#b8b4ff' : '#c8c8d8', marginBottom: 3 }}>
+                        {s.label}
+                      </div>
+                      <div style={{ fontSize: 11, color: '#555568', lineHeight: 1.4 }}>{s.desc}</div>
+                    </button>
+                  ))}
+                </div>
               </div>
             </div>
           )}

@@ -19,7 +19,8 @@
   },
   "include": [
     "src/renderer/src/**/*",
-    "src/shared/**/*"
+    "src/shared/**/*",
+    "src/preload/types.d.ts"
   ],
   "exclude": ["node_modules", "out", "dist"]
 }

@@ -34,6 +34,7 @@ export interface AppSettings {
 
   // AI Cleanup
   aiCleanupEnabled: boolean
+  aiCleanupMode: 'fast' | 'accurate'
   writingStyle: WritingStyle
 
   // Insertion
@@ -67,6 +68,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   transcriptionMode: 'fast',
   language: 'auto',
   aiCleanupEnabled: true,
+  aiCleanupMode: 'fast',
   writingStyle: 'professional',
   clipboardInsertionEnabled: true,
   insertionDelayMs: 150,
@@ -75,7 +77,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   overlayPosition: { x: -1, y: -1 }, // -1 = auto-center
   historyRetentionDays: 30,
   historyEnabled: true,
-  primaryHotkey: 'Ctrl+Alt+Space',
+  primaryHotkey: 'Ctrl+Shift',
   commandPaletteHotkey: 'Ctrl+Shift+Enter',
   launchOnStartup: false
 }
