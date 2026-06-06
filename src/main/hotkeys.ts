@@ -2,7 +2,7 @@ import { globalShortcut } from 'electron'
 import { uIOhook, UiohookKey } from 'uiohook-napi'
 import { logger } from './logger'
 import { IPC } from '../shared/types'
-import { showOverlay, sendToOverlay } from './ipc/window.ipc'
+import { showOverlay, sendToOverlay, showCommandPalette } from './ipc/window.ipc'
 
 let isRecording = false
 
@@ -80,7 +80,7 @@ export function registerHotkeys(): void {
   // Secondary: Ctrl+Shift+Enter — command palette
   const cmdReg = globalShortcut.register('CommandOrControl+Shift+Return', () => {
     logger.info('[Hotkeys] Command palette triggered')
-    sendToOverlay(IPC.STATE_COMMAND_PALETTE_SHOW)
+    showCommandPalette()
   })
 
   if (!cmdReg) {

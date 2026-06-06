@@ -4,6 +4,8 @@ import { getSettingsStore } from '../store'
 import { logger } from '../logger'
 import type { AppSettings } from '../../shared/types'
 
+import { resetGroqServices } from './audio.ipc'
+
 export function registerSettingsIPC(): void {
   ipcMain.handle(IPC.SETTINGS_GET, () => {
     const store = getSettingsStore()
@@ -14,6 +16,12 @@ export function registerSettingsIPC(): void {
     const store = getSettingsStore()
     for (const [key, value] of Object.entries(updates)) {
       store.set(key as keyof AppSettings, value)
+    }
+    if ('groqApiKey' in updates) {
+      resetGroqServices()
+      if (updates.groqApiKey) {
+        process.env.GROQ_API_KEY = updates.groqApiKey
+      }
     }
     logger.info(`[IPC:settings] Updated: ${Object.keys(updates).join(', ')}`)
     return true

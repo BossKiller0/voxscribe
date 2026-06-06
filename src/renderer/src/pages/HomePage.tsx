@@ -18,7 +18,7 @@ export function HomePage() {
   })
 
   return (
-    <div style={{ padding: '36px 40px', maxWidth: 820, overflowY: 'auto', height: '100%' }}>
+    <div style={{ padding: '36px 40px', overflowY: 'auto', height: '100%' }}>
       {/* Header */}
       <div style={{ marginBottom: 40 }}>
         <h1 style={{ fontSize: 28, fontWeight: 800, color: '#e8e8f0', marginBottom: 8 }}>

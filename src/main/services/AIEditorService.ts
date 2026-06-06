@@ -2,6 +2,7 @@ import Groq from 'groq-sdk'
 import { logger } from '../logger'
 import type { IAIEditor } from './interfaces'
 import type { WritingStyle } from '../../shared/types'
+import { getSettingsStore } from '../store'
 
 const STYLE_PROMPTS: Record<WritingStyle, string> = {
   casual: 'casual and conversational, like texting a friend',
@@ -37,9 +38,9 @@ export class AIEditorService implements IAIEditor {
   private model: string
 
   constructor() {
-    const apiKey = process.env.GROQ_API_KEY
+    const apiKey = getSettingsStore().get('groqApiKey') || process.env.GROQ_API_KEY
     if (!apiKey) {
-      throw new Error('GROQ_API_KEY environment variable is not set')
+      throw new Error('Groq API Key is not set in settings or environment')
     }
     this.client = new Groq({ apiKey })
     this.model = process.env.GROQ_EDITOR_MODEL || 'llama-3.3-70b-versatile'

@@ -224,6 +224,9 @@ export function SettingsPage() {
                   </button>
                 ))}
               </div>
+              <p style={{ fontSize: 11, color: '#555568', marginTop: 12 }}>
+                Correction Model: llama-3.3-70b-versatile
+              </p>
             </div>
           )}
         </section>

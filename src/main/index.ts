@@ -11,7 +11,7 @@ import { registerSnippetsIPC } from './ipc/snippets.ipc'
 import { registerVocabularyIPC } from './ipc/vocabulary.ipc'
 import { registerWindowIPC, setWindowRefs } from './ipc/window.ipc'
 import { DatabaseService } from './services/DatabaseService'
-import { ensureValidApiKey } from './services/ApiKeyService'
+import { ensureValidApiKey, registerApiKeyIPC } from './services/ApiKeyService'
 import { logger } from './logger'
 
 // Load environment variables from .env
@@ -29,7 +29,7 @@ function createDashboardWindow(): BrowserWindow {
     minWidth: 800,
     minHeight: 600,
     show: false,
-    frame: true,
+    frame: false,
     titleBarStyle: 'hidden',
     backgroundColor: '#0f0f14',
     icon: join(__dirname, '../../resources/icon.png'),
@@ -84,6 +84,7 @@ function createOverlayWindow(): BrowserWindow {
     focusable: false, // Don't steal focus from target window
     hasShadow: false,
     type: 'toolbar',
+    icon: join(__dirname, '../../resources/icon.png'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
@@ -121,6 +122,7 @@ function createCommandPaletteWindow(): BrowserWindow {
     alwaysOnTop: true,
     center: true,
     resizable: false,
+    icon: join(__dirname, '../../resources/icon.png'),
     webPreferences: {
       preload: join(__dirname, '../preload/index.js'),
       sandbox: false,
@@ -155,6 +157,9 @@ app.whenReady().then(async () => {
     logger.error(`[App] Database initialization failed: ${err.message}`)
   }
 
+  // Register API key IPC handlers
+  registerApiKeyIPC()
+
   // Ensure valid API Key exists before proceeding
   await ensureValidApiKey()
 
@@ -169,7 +174,7 @@ app.whenReady().then(async () => {
   }
 
   // Wire window refs for IPC
-  setWindowRefs(dashboardWindow, overlayWindow)
+  setWindowRefs(dashboardWindow, overlayWindow, commandPaletteWindow)
 
   // Create system tray
   createTray(dashboardWindow)

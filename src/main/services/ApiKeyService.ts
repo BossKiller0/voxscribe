@@ -5,7 +5,13 @@ import path from 'path'
 import Groq from 'groq-sdk'
 import { logger } from '../logger'
 
+import { getSettingsStore } from '../store'
+
+import { resetGroqServices } from '../ipc/audio.ipc'
+import { getDashboardWindow } from '../ipc/window.ipc'
+
 let promptWindow: BrowserWindow | null = null
+let resolvePrompt: ((value: string) => void) | null = null
 
 export function isAuthError(err: any): boolean {
   if (err.status === 401 || err.status === 403) return true
@@ -13,39 +19,80 @@ export function isAuthError(err: any): boolean {
   return msg.includes('api key') || msg.includes('apikey') || msg.includes('unauthorized') || msg.includes('invalid api')
 }
 
-export async function saveApiKeyToEnv(key: string): Promise<void> {
-  const envPath = path.join(process.cwd(), '.env')
-  let content = ''
+export async function saveApiKeyToStore(key: string): Promise<void> {
+  getSettingsStore().set('groqApiKey', key)
+  process.env.GROQ_API_KEY = key
+  logger.info(`[API Key] Saved to settings store`)
+}
 
-  if (fs.existsSync(envPath)) {
-    content = fs.readFileSync(envPath, 'utf8')
-    const regex = /^GROQ_API_KEY=.*$/m
-    if (regex.test(content)) {
-      content = content.replace(regex, `GROQ_API_KEY=${key}`)
-    } else {
-      content += `\nGROQ_API_KEY=${key}`
-    }
-  } else {
-    const examplePath = path.join(process.cwd(), '.env.example')
-    if (fs.existsSync(examplePath)) {
-      content = fs.readFileSync(examplePath, 'utf8')
-      const regex = /^GROQ_API_KEY=.*$/m
-      if (regex.test(content)) {
-        content = content.replace(regex, `GROQ_API_KEY=${key}`)
-      } else {
-        content += `\nGROQ_API_KEY=${key}`
+export function registerApiKeyIPC(): void {
+  ipcMain.handle('api-key:open-console', async () => {
+    shell.openExternal('https://console.groq.com')
+  })
+
+  ipcMain.handle('api-key:submit', async (_, key) => {
+    try {
+      logger.info('[API Key Validation] Validating submitted key...')
+      const groq = new Groq({ apiKey: key })
+      await groq.models.list()
+      
+      // Key is valid! Save it
+      await saveApiKeyToStore(key)
+      
+      logger.info('[API Key Validation] Key is valid and saved.')
+      
+      if (promptWindow) {
+        promptWindow.close()
       }
-    } else {
-      content = `GROQ_API_KEY=${key}\n`
+      
+      if (resolvePrompt) {
+        resolvePrompt(key)
+        resolvePrompt = null
+      }
+      
+      return { success: true }
+    } catch (err: any) {
+      logger.error(`[API Key Validation] Failed: ${err.message}`)
+      return {
+        success: false,
+        error: isAuthError(err)
+          ? 'Invalid API key. Please double check the key.'
+          : 'Network error. Please check your connection and try again.'
+      }
     }
-  }
+  })
 
-  fs.writeFileSync(envPath, content, 'utf8')
-  logger.info(`[API Key] Saved to ${envPath}`)
+  ipcMain.handle('api-key:remove', async () => {
+    logger.info('[API Key] Removing API key...')
+    getSettingsStore().set('groqApiKey', '')
+    process.env.GROQ_API_KEY = ''
+    resetGroqServices()
+    
+    // Hide dashboard window
+    const dashboard = getDashboardWindow()
+    if (dashboard && !dashboard.isDestroyed()) {
+      dashboard.hide()
+    }
+    
+    // Trigger ensureValidApiKey(true)
+    setTimeout(() => {
+      ensureValidApiKey(true).then((newKey) => {
+        // Show dashboard window again
+        if (dashboard && !dashboard.isDestroyed()) {
+          dashboard.show()
+        }
+      })
+    }, 100)
+    
+    return { success: true }
+  })
 }
 
 export async function ensureValidApiKey(forceShow = false, initialErrorMsg = ''): Promise<string> {
-  let currentKey = process.env.GROQ_API_KEY || ''
+  let currentKey = getSettingsStore().get('groqApiKey') || ''
+  if (currentKey) {
+    process.env.GROQ_API_KEY = currentKey
+  }
 
   if (currentKey && !forceShow) {
     try {
@@ -67,11 +114,6 @@ export async function ensureValidApiKey(forceShow = false, initialErrorMsg = '')
     initialErrorMsg = 'Please insert API key to continue.'
   }
 
-  // Set up shell helper
-  ipcMain.handle('api-key:open-console', async () => {
-    shell.openExternal('https://console.groq.com')
-  })
-
   // Show dialog to request key
   return new Promise((resolve) => {
     // If prompt window is already showing, just focus it
@@ -79,6 +121,8 @@ export async function ensureValidApiKey(forceShow = false, initialErrorMsg = '')
       promptWindow.focus()
       return
     }
+
+    resolvePrompt = resolve
 
     promptWindow = new BrowserWindow({
       width: 480,
@@ -233,24 +277,24 @@ export async function ensureValidApiKey(forceShow = false, initialErrorMsg = '')
           const btn = document.getElementById('ok-btn');
           const errorBox = document.getElementById('error-box');
           const descText = document.getElementById('desc-text');
-
+ 
           const initialError = "${initialErrorMsg.replace(/"/g, '\\"')}";
           if (initialError) {
             errorBox.innerText = initialError;
             errorBox.style.display = 'block';
             descText.innerText = "Please update API key to continue.";
           }
-
+ 
           input.focus();
-
+ 
           input.addEventListener('keydown', (e) => {
             if (e.key === 'Enter') {
               submit();
             }
           });
-
+ 
           btn.addEventListener('click', submit);
-
+ 
           async function submit() {
             const val = input.value.trim();
             if (!val) {
@@ -261,7 +305,7 @@ export async function ensureValidApiKey(forceShow = false, initialErrorMsg = '')
             errorBox.style.display = 'none';
             btn.disabled = true;
             btn.innerText = "Validating...";
-
+ 
             try {
               const res = await window.flowAPI.submitApiKey(val);
               if (res.success) {
@@ -286,46 +330,8 @@ export async function ensureValidApiKey(forceShow = false, initialErrorMsg = '')
 
     promptWindow.loadURL('data:text/html;charset=utf-8,' + encodeURIComponent(htmlContent))
 
-    ipcMain.handle('api-key:submit', async (_, key) => {
-      try {
-        logger.info('[API Key Validation] Validating submitted key...')
-        const groq = new Groq({ apiKey: key })
-        await groq.models.list()
-        
-        // Key is valid! Save it
-        await saveApiKeyToEnv(key)
-        process.env.GROQ_API_KEY = key
-        
-        logger.info('[API Key Validation] Key is valid and saved.')
-        
-        if (promptWindow) {
-          promptWindow.close()
-        }
-        
-        ipcMain.removeHandler('api-key:submit')
-        ipcMain.removeHandler('api-key:open-console')
-        resolve(key)
-        return { success: true }
-      } catch (err: any) {
-        logger.error(`[API Key Validation] Failed: ${err.message}`)
-        return {
-          success: false,
-          error: isAuthError(err)
-            ? 'Invalid API key. Please double check the key.'
-            : 'Network error. Please check your connection and try again.'
-        }
-      }
-    })
-
     promptWindow.on('closed', () => {
       promptWindow = null
-      // Clean up the handlers if the window was closed without resolution
-      try {
-        ipcMain.removeHandler('api-key:submit')
-      } catch (_) {}
-      try {
-        ipcMain.removeHandler('api-key:open-console')
-      } catch (_) {}
       
       if (!process.env.GROQ_API_KEY) {
         logger.error('[API Key] Closed without setting key. Exiting app.')

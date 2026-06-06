@@ -4,13 +4,20 @@ import { logger } from '../logger'
 
 let dashboardWin: BrowserWindow | null = null
 let overlayWin: BrowserWindow | null = null
+let commandPaletteWin: BrowserWindow | null = null
 
 export function setWindowRefs(
   dashboard: BrowserWindow | null,
-  overlay: BrowserWindow | null
+  overlay: BrowserWindow | null,
+  commandPalette: BrowserWindow | null
 ): void {
   dashboardWin = dashboard
   overlayWin = overlay
+  commandPaletteWin = commandPalette
+}
+
+export function getDashboardWindow(): BrowserWindow | null {
+  return dashboardWin
 }
 
 export function registerWindowIPC(): void {
@@ -24,7 +31,29 @@ export function registerWindowIPC(): void {
 
   ipcMain.handle(IPC.WINDOW_MINIMIZE, () => {
     if (dashboardWin && !dashboardWin.isDestroyed()) {
+      dashboardWin.minimize()
+    }
+  })
+
+  ipcMain.handle('window:maximize', () => {
+    if (dashboardWin && !dashboardWin.isDestroyed()) {
+      if (dashboardWin.isMaximized()) {
+        dashboardWin.unmaximize()
+      } else {
+        dashboardWin.maximize()
+      }
+    }
+  })
+
+  ipcMain.handle('window:close', () => {
+    if (dashboardWin && !dashboardWin.isDestroyed()) {
       dashboardWin.hide()
+    }
+  })
+
+  ipcMain.handle('window:close-command-palette', () => {
+    if (commandPaletteWin && !commandPaletteWin.isDestroyed()) {
+      commandPaletteWin.hide()
     }
   })
 
@@ -48,6 +77,20 @@ export function hideOverlay(): void {
         overlayWin.hide()
       }
     }, 400) // Allow exit animation
+  }
+}
+
+export function showCommandPalette(): void {
+  if (commandPaletteWin && !commandPaletteWin.isDestroyed()) {
+    commandPaletteWin.show()
+    commandPaletteWin.focus()
+    commandPaletteWin.webContents.send(IPC.STATE_COMMAND_PALETTE_SHOW)
+  }
+}
+
+export function hideCommandPalette(): void {
+  if (commandPaletteWin && !commandPaletteWin.isDestroyed()) {
+    commandPaletteWin.hide()
   }
 }
 
