@@ -35,12 +35,12 @@ export function createTray(dashboard: BrowserWindow): Tray {
 
   const icon = createFallbackIcon(false)
   tray = new Tray(icon)
-  tray.setToolTip('FlowClone — Voice Dictation\nPress Ctrl+Alt+Space to dictate')
+  tray.setToolTip('FlowClone — Voice Dictation\nHold Ctrl+Shift to dictate')
 
   updateTrayMenu()
 
   tray.on('click', () => {
-    if (dashboardWindow) {
+    if (dashboardWindow && !dashboardWindow.isDestroyed()) {
       if (dashboardWindow.isVisible()) {
         dashboardWindow.hide()
       } else {
@@ -61,7 +61,7 @@ export function updateTrayMenu(): void {
 
   const contextMenu = Menu.buildFromTemplate([
     {
-      label: recording ? '🔴 Stop Dictation' : '🎙️ Start Dictation (Ctrl+Alt+Space)',
+      label: recording ? '🔴 Stop Dictation' : '🎙️ Start Dictation (Ctrl+Shift)',
       click: () => {
         sendToOverlay(recording ? IPC.AUDIO_STOP_RECORDING : IPC.STATE_RECORDING_CHANGED, recording ? undefined : 'listening')
       }
@@ -70,16 +70,20 @@ export function updateTrayMenu(): void {
     {
       label: '📊 Open Dashboard',
       click: () => {
-        dashboardWindow?.show()
-        dashboardWindow?.focus()
+        if (dashboardWindow && !dashboardWindow.isDestroyed()) {
+          dashboardWindow.show()
+          dashboardWindow.focus()
+        }
       }
     },
     {
       label: '⚙️ Settings',
       click: () => {
-        dashboardWindow?.show()
-        dashboardWindow?.focus()
-        dashboardWindow?.webContents.send('navigate', '/settings')
+        if (dashboardWindow && !dashboardWindow.isDestroyed()) {
+          dashboardWindow.show()
+          dashboardWindow.focus()
+          dashboardWindow.webContents.send('navigate', '/settings')
+        }
       }
     },
     { type: 'separator' },
@@ -104,8 +108,8 @@ export function setTrayRecordingState(isRecording: boolean): void {
   tray.setImage(icon)
   tray.setToolTip(
     isRecording
-      ? '🔴 FlowClone — Recording... (Ctrl+Alt+Space to stop)'
-      : '🎙️ FlowClone — Press Ctrl+Alt+Space to dictate'
+      ? '🔴 FlowClone — Recording... (Release Ctrl+Shift to stop)'
+      : '🎙️ FlowClone — Hold Ctrl+Shift to dictate'
   )
   updateTrayMenu()
 }

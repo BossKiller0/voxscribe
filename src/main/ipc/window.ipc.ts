@@ -15,7 +15,7 @@ export function setWindowRefs(
 
 export function registerWindowIPC(): void {
   ipcMain.handle(IPC.WINDOW_OPEN_DASHBOARD, () => {
-    if (dashboardWin) {
+    if (dashboardWin && !dashboardWin.isDestroyed()) {
       dashboardWin.show()
       dashboardWin.focus()
       logger.info('[IPC:window] Opened dashboard')
@@ -23,7 +23,7 @@ export function registerWindowIPC(): void {
   })
 
   ipcMain.handle(IPC.WINDOW_MINIMIZE, () => {
-    if (dashboardWin) {
+    if (dashboardWin && !dashboardWin.isDestroyed()) {
       dashboardWin.hide()
     }
   })
@@ -34,23 +34,31 @@ export function registerWindowIPC(): void {
 }
 
 export function showOverlay(): void {
-  if (overlayWin) {
+  if (overlayWin && !overlayWin.isDestroyed()) {
     overlayWin.showInactive()
     overlayWin.webContents.send(IPC.STATE_OVERLAY_SHOW)
   }
 }
 
 export function hideOverlay(): void {
-  if (overlayWin) {
+  if (overlayWin && !overlayWin.isDestroyed()) {
     overlayWin.webContents.send(IPC.STATE_OVERLAY_HIDE)
-    setTimeout(() => overlayWin?.hide(), 400) // Allow exit animation
+    setTimeout(() => {
+      if (overlayWin && !overlayWin.isDestroyed()) {
+        overlayWin.hide()
+      }
+    }, 400) // Allow exit animation
   }
 }
 
 export function sendToOverlay(channel: string, ...args: any[]): void {
-  overlayWin?.webContents.send(channel, ...args)
+  if (overlayWin && !overlayWin.isDestroyed()) {
+    overlayWin.webContents.send(channel, ...args)
+  }
 }
 
 export function sendToDashboard(channel: string, ...args: any[]): void {
-  dashboardWin?.webContents.send(channel, ...args)
+  if (dashboardWin && !dashboardWin.isDestroyed()) {
+    dashboardWin.webContents.send(channel, ...args)
+  }
 }

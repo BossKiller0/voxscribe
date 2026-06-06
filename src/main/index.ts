@@ -65,9 +65,12 @@ function createDashboardWindow(): BrowserWindow {
 }
 
 function createOverlayWindow(): BrowserWindow {
+  const winWidth = 100
+  const winHeight = 100
+
   const win = new BrowserWindow({
-    width: 280,
-    height: 100,
+    width: winWidth,
+    height: winHeight,
     show: false,
     frame: false,
     transparent: true,
@@ -85,10 +88,15 @@ function createOverlayWindow(): BrowserWindow {
     }
   })
 
-  // Position at bottom-right of primary display
+  // Centered at the bottom-middle of the primary display
   const { screen } = require('electron')
   const { width, height } = screen.getPrimaryDisplay().workAreaSize
-  win.setPosition(width - 300, height - 120)
+  const x = Math.round((width - winWidth) / 2)
+  const y = Math.round(height - winHeight - 20) // 20px above the taskbar/bottom area
+  win.setPosition(x, y)
+
+  // Make the overlay window click-through
+  win.setIgnoreMouseEvents(true)
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     win.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/overlay.html`)
@@ -151,6 +159,11 @@ app.whenReady().then(async () => {
   overlayWindow = createOverlayWindow()
   commandPaletteWindow = createCommandPaletteWindow()
 
+  // Show the overlay window inactive immediately so the idle dot is visible
+  if (overlayWindow) {
+    overlayWindow.showInactive()
+  }
+
   // Wire window refs for IPC
   setWindowRefs(dashboardWindow, overlayWindow)
 
@@ -172,7 +185,7 @@ app.whenReady().then(async () => {
   pruneOldHistory()
 
   logger.info('✅ FlowClone Windows started successfully')
-  logger.info(`📝 Press Ctrl+Alt+Space to start dictating`)
+  logger.info(`📝 Hold Ctrl+Shift to start dictating`)
 })
 
 app.on('window-all-closed', () => {

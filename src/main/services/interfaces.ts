@@ -1,4 +1,4 @@
-import type { WritingStyle, TranscriptionResult } from '../shared/types'
+import type { WritingStyle, TranscriptionResult } from '../../shared/types'
 
 // ─── ITranscriptionProvider ───────────────────────────────────────────────────
 // Implement this to support OpenAI, Gemini, Local Whisper, etc.

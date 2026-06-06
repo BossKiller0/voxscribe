@@ -48,15 +48,15 @@ export function HomePage() {
             Primary Shortcut
           </div>
           <h2 style={{ fontSize: 22, fontWeight: 700, color: '#e8e8f0', marginBottom: 8, lineHeight: 1.3 }}>
-            Press to start dictating
+            Hold to start dictating
           </h2>
           <p style={{ fontSize: 14, color: '#8888a8' }}>
             Works in any app — VS Code, Chrome, Word, Slack, and more
           </p>
         </div>
         <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 12 }}>
-          <HotkeyBadge keys={['Ctrl', 'Alt', 'Space']} size="lg" />
-          <span style={{ fontSize: 12, color: '#555568' }}>Toggle recording</span>
+          <HotkeyBadge keys={['Ctrl', 'Shift']} size="lg" />
+          <span style={{ fontSize: 12, color: '#555568' }}>Hold to record</span>
         </div>
       </div>
 
@@ -106,12 +106,12 @@ export function HomePage() {
             },
             {
               step: '2',
-              text: 'Press Ctrl+Alt+Space — the floating overlay appears and recording starts',
+              text: 'Hold Ctrl+Shift — the floating overlay appears and recording starts',
               icon: '🎙️'
             },
             {
               step: '3',
-              text: 'Speak naturally. Press Ctrl+Alt+Space again to stop.',
+              text: 'Speak naturally. Release keys to stop and paste.',
               icon: '🗣️'
             },
             {

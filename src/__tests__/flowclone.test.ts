@@ -128,9 +128,9 @@ describe('TextInsertionService - clipboard logic', () => {
 })
 
 describe('Settings defaults', () => {
-  it('default hotkey is Ctrl+Alt+Space', async () => {
+  it('default hotkey is Ctrl+Shift', async () => {
     const { DEFAULT_SETTINGS } = await import('../shared/types')
-    expect(DEFAULT_SETTINGS.primaryHotkey).toBe('Ctrl+Alt+Space')
+    expect(DEFAULT_SETTINGS.primaryHotkey).toBe('Ctrl+Shift')
     expect(DEFAULT_SETTINGS.commandPaletteHotkey).toBe('Ctrl+Shift+Enter')
   })
 

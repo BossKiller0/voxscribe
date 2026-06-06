@@ -75,7 +75,7 @@ export const DEFAULT_SETTINGS: AppSettings = {
   overlayPosition: { x: -1, y: -1 }, // -1 = auto-center
   historyRetentionDays: 30,
   historyEnabled: true,
-  primaryHotkey: 'Ctrl+Alt+Space',
+  primaryHotkey: 'Ctrl+Shift',
   commandPaletteHotkey: 'Ctrl+Shift+Enter',
   launchOnStartup: false
 }

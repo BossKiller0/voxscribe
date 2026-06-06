@@ -1,15 +1,18 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="en" class="overlay-page">
   <head>
     <meta charset="UTF-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>FlowClone Overlay</title>
     <style>
-      body { margin: 0; padding: 0; background: transparent !important; overflow: hidden; }
-      html { background: transparent !important; }
+      html.overlay-page, body.overlay-body {
+        background: transparent !important;
+        background-color: transparent !important;
+        box-shadow: none !important;
+      }
     </style>
   </head>
-  <body>
+  <body class="overlay-body">
     <div id="root"></div>
     <script type="module" src="/src/overlay.tsx"></script>
   </body>
