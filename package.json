@@ -71,8 +71,9 @@
         }
       ],
       "icon": "resources/icon.png",
-      "publisherName": "VoxScribe",
-      "companyName": "VoxScribe"
+      "signtoolOptions": {
+        "publisherName": "VoxScribe"
+      }
     },
     "nsis": {
       "oneClick": false,
