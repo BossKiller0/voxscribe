@@ -58,12 +58,13 @@ export class AIEditorService implements IAIEditor {
         ? `\n\nIMPORTANT: Preserve these exact terms as spelled: ${vocabulary.join(', ')}`
         : ''
 
-    const systemPrompt = `You are a professional speech-to-text editor. Your job is to:
-1. Remove filler words (uh, um, ah, like, you know, basically, literally, right, so, well)
-2. Remove false starts and repetitions
-3. Fix punctuation, capitalization, and grammar
-4. Write in a ${STYLE_PROMPTS[style]} style
-5. Return ONLY the cleaned text, nothing else${vocabNote}`
+    const systemPrompt = `You are a professional speech-to-text editor. Your job is to clean up the transcribed speech according to these strict rules:
+1. Keep the text exactly as the user spoke, without any changes. Do NOT rewrite, rephrase, or restructure the text. Do NOT change the tone or format of the speech.
+2. Any corrections should ONLY be made for grammatical errors or pronunciation/spelling issues (such as homophones or transcription errors).
+3. Double quotation marks should ONLY be inserted where necessary (e.g., around direct quotes or speech).
+4. No text should be altered unless it is a grammatical or ethical mistake.
+5. Remove filler words (uh, um, ah, like, you know, basically, literally, right, so, well)
+6. Return ONLY the cleaned text, nothing else. Do not include any introductory or concluding comments.${vocabNote}`
 
     const userPrompt = `Clean up this transcribed speech:\n\n"${text}"`
 

@@ -2,7 +2,7 @@ import { app, BrowserWindow, shell, ipcMain } from 'electron'
 import { join } from 'path'
 import { electronApp, optimizer, is } from '@electron-toolkit/utils'
 import dotenv from 'dotenv'
-import { createTray } from './tray'
+import { createTray, destroyTray } from './tray'
 import { registerHotkeys, unregisterHotkeys } from './hotkeys'
 import { registerAudioIPC } from './ipc/audio.ipc'
 import { registerSettingsIPC } from './ipc/settings.ipc'
@@ -20,6 +20,7 @@ dotenv.config()
 let dashboardWindow: BrowserWindow | null = null
 let overlayWindow: BrowserWindow | null = null
 let commandPaletteWindow: BrowserWindow | null = null
+let isQuitting = false
 
 function createDashboardWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -45,6 +46,9 @@ function createDashboardWindow(): BrowserWindow {
   })
 
   win.on('close', (e) => {
+    if (isQuitting) {
+      return
+    }
     // Hide instead of closing so the app stays in tray
     e.preventDefault()
     win.hide()
@@ -195,8 +199,13 @@ app.on('window-all-closed', () => {
   }
 })
 
+app.on('before-quit', () => {
+  isQuitting = true
+})
+
 app.on('will-quit', () => {
   unregisterHotkeys()
+  destroyTray()
   logger.info('[App] Shutting down')
 })
 

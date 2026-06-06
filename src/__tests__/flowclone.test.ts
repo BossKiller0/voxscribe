@@ -22,16 +22,18 @@ vi.mock('../src/main/logger', () => ({
 }))
 
 describe('AIEditorService - cleanupTranscript', () => {
-  it('removes common filler words from prompt', () => {
-    const fillerWords = ['um', 'uh', 'like', 'you know', 'basically']
-    const input = 'um hey uh can you like you know basically send that tomorrow'
+  it('instructs to preserve text and only correct grammatical/pronunciation/ethical mistakes', () => {
+    const systemPrompt = `You are a professional speech-to-text editor. Your job is to clean up the transcribed speech according to these strict rules:
+1. Keep the text exactly as the user spoke, without any changes. Do NOT rewrite, rephrase, or restructure the text. Do NOT change the tone or format of the speech.
+2. Any corrections should ONLY be made for grammatical errors or pronunciation/spelling issues (such as homophones or transcription errors).
+3. Double quotation marks should ONLY be inserted where necessary (e.g., around direct quotes or speech).
+4. No text should be altered unless it is a grammatical or ethical mistake.
+5. Return ONLY the cleaned text, nothing else. Do not include any introductory or concluding comments.`
     
-    // Test that the cleanup prompt includes filler word removal instructions
-    const systemPrompt = `Remove filler words (uh, um, ah, like, you know, basically, literally, right, so, well)`
-    
-    fillerWords.forEach(word => {
-      expect(systemPrompt.toLowerCase()).toContain(word.toLowerCase())
-    })
+    expect(systemPrompt).toContain('Keep the text exactly as the user spoke')
+    expect(systemPrompt).toContain('Any corrections should ONLY be made for grammatical errors or pronunciation/spelling issues')
+    expect(systemPrompt).toContain('Double quotation marks should ONLY be inserted where necessary')
+    expect(systemPrompt).toContain('No text should be altered unless it is a grammatical or ethical mistake')
   })
 
   it('normalizes voice commands correctly', () => {

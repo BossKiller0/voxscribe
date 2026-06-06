@@ -30,10 +30,27 @@ function createFallbackIcon(isRecording = false): Electron.NativeImage {
   return nativeImage.createFromBuffer(data, { width: size, height: size })
 }
 
+function getTrayIcon(isRecording = false): Electron.NativeImage {
+  const iconName = isRecording ? 'tray-recording.png' : 'tray.png'
+  const iconPath = path.join(__dirname, `../../resources/${iconName}`)
+
+  try {
+    const image = nativeImage.createFromPath(iconPath)
+    if (image.isEmpty()) {
+      logger.warn(`[Tray] Icon at ${iconPath} is empty, using fallback.`)
+      return createFallbackIcon(isRecording)
+    }
+    return image.resize(ICON_SIZE)
+  } catch (err: any) {
+    logger.error(`[Tray] Failed to load tray icon: ${err.message}`)
+    return createFallbackIcon(isRecording)
+  }
+}
+
 export function createTray(dashboard: BrowserWindow): Tray {
   dashboardWindow = dashboard
 
-  const icon = createFallbackIcon(false)
+  const icon = getTrayIcon(false)
   tray = new Tray(icon)
   tray.setToolTip('FlowClone — Voice Dictation\nHold Ctrl+Shift to dictate')
 
@@ -102,9 +119,17 @@ export function updateTrayMenu(): void {
   tray.setContextMenu(contextMenu)
 }
 
+export function destroyTray(): void {
+  if (tray) {
+    tray.destroy()
+    tray = null
+    logger.info('[Tray] System tray destroyed')
+  }
+}
+
 export function setTrayRecordingState(isRecording: boolean): void {
   if (!tray) return
-  const icon = createFallbackIcon(isRecording)
+  const icon = getTrayIcon(isRecording)
   tray.setImage(icon)
   tray.setToolTip(
     isRecording

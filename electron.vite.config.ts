@@ -1,5 +1,6 @@
 import { defineConfig, externalizeDepsPlugin } from 'electron-vite'
 import react from '@vitejs/plugin-react'
+// @ts-ignore - unresolved in moduleResolution: node due to dist/index.d.mts
 import tailwindcss from '@tailwindcss/vite'
 import { resolve } from 'path'
 
