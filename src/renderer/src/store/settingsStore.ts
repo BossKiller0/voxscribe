@@ -17,7 +17,7 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
 
   loadSettings: async () => {
     try {
-      const settings = await window.flowAPI.getSettings()
+      const settings = await window.voxScribeAPI.getSettings()
       set({ settings, isLoaded: true })
     } catch (err) {
       console.error('Failed to load settings:', err)
@@ -29,11 +29,11 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     const current = get().settings
     const merged = { ...current, ...updates }
     set({ settings: merged })
-    await window.flowAPI.saveSettings(updates)
+    await window.voxScribeAPI.saveSettings(updates)
   },
 
   resetSettings: async () => {
-    await window.flowAPI.resetSettings()
+    await window.voxScribeAPI.resetSettings()
     set({ settings: DEFAULT_SETTINGS })
   }
 }))

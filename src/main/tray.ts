@@ -52,7 +52,7 @@ export function createTray(dashboard: BrowserWindow): Tray {
 
   const icon = getTrayIcon(false)
   tray = new Tray(icon)
-  tray.setToolTip('FlowClone — Voice Dictation\nHold Ctrl+Shift to dictate')
+  tray.setToolTip('VoxScribe — Voice Dictation\nHold Ctrl+Shift to dictate')
 
   updateTrayMenu()
 
@@ -105,7 +105,7 @@ export function updateTrayMenu(): void {
     },
     { type: 'separator' },
     {
-      label: `FlowClone v${app.getVersion()}`,
+      label: `VoxScribe v${app.getVersion()}`,
       enabled: false
     },
     {
@@ -133,8 +133,8 @@ export function setTrayRecordingState(isRecording: boolean): void {
   tray.setImage(icon)
   tray.setToolTip(
     isRecording
-      ? '🔴 FlowClone — Recording... (Release Ctrl+Shift to stop)'
-      : '🎙️ FlowClone — Hold Ctrl+Shift to dictate'
+      ? '🔴 VoxScribe — Recording... (Release Ctrl+Shift to stop)'
+      : '🎙️ VoxScribe — Hold Ctrl+Shift to dictate'
   )
   updateTrayMenu()
 }

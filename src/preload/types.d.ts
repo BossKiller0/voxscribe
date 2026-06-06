@@ -1,7 +1,7 @@
-import type { FlowAPI } from './index'
+import type { VoxScribeAPI } from './index'
 
 declare global {
   interface Window {
-    flowAPI: FlowAPI
+    voxScribeAPI: VoxScribeAPI
   }
 }

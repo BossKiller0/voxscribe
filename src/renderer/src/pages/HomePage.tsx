@@ -8,7 +8,7 @@ export function HomePage() {
 
   useEffect(() => {
     loadHistory()
-    window.flowAPI.getVersion().then(setVersion).catch(() => {})
+    window.voxScribeAPI.getVersion().then(setVersion).catch(() => {})
   }, [])
 
   const totalWords = entries.reduce((sum, e) => sum + e.wordCount, 0)
@@ -22,7 +22,7 @@ export function HomePage() {
       {/* Header */}
       <div style={{ marginBottom: 40 }}>
         <h1 style={{ fontSize: 28, fontWeight: 800, color: '#e8e8f0', marginBottom: 8 }}>
-          Welcome to FlowClone
+          Welcome to VoxScribe
         </h1>
         <p style={{ fontSize: 15, color: '#8888a8', lineHeight: 1.6 }}>
           System-wide voice dictation for Windows. Speak anywhere, anytime.

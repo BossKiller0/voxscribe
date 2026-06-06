@@ -17,7 +17,7 @@ export function DashboardApp() {
     loadSettings()
 
     // Listen for tray navigation
-    const unsub = window.flowAPI.onNavigate((route) => {
+    const unsub = window.voxScribeAPI.onNavigate((route) => {
       const map: Record<string, any> = {
         '/settings': 'settings',
         '/history': 'history',
@@ -60,18 +60,18 @@ export function DashboardApp() {
           left: 0,
           right: 0,
           height: 32,
-          WebkitAppRegion: 'drag' as any,
+          WebkitAppRegion: 'drag',
           zIndex: 1000,
           display: 'flex',
           justifyContent: 'flex-end',
           alignItems: 'center',
           paddingRight: 8
-        }}
+        } as React.CSSProperties}
       >
-        <div style={{ display: 'flex', gap: 4, WebkitAppRegion: 'no-drag' as any }}>
+        <div style={{ display: 'flex', gap: 4, WebkitAppRegion: 'no-drag' } as React.CSSProperties}>
           {/* Minimize */}
           <button
-            onClick={() => window.flowAPI.minimizeToDashboard()}
+            onClick={() => window.voxScribeAPI.minimizeToDashboard()}
             style={{
               width: 28,
               height: 28,
@@ -101,7 +101,7 @@ export function DashboardApp() {
           
           {/* Maximize */}
           <button
-            onClick={() => window.flowAPI.maximizeWindow()}
+            onClick={() => window.voxScribeAPI.maximizeWindow()}
             style={{
               width: 28,
               height: 28,
@@ -131,7 +131,7 @@ export function DashboardApp() {
 
           {/* Close */}
           <button
-            onClick={() => window.flowAPI.closeWindow()}
+            onClick={() => window.voxScribeAPI.closeWindow()}
             style={{
               width: 28,
               height: 28,

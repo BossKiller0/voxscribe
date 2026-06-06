@@ -30,11 +30,11 @@ export const logger = winston.createLogger({
       )
     }),
     new winston.transports.File({
-      filename: path.join(logDir, 'flowclone-error.log'),
+      filename: path.join(logDir, 'voxscribe-error.log'),
       level: 'error'
     }),
     new winston.transports.File({
-      filename: path.join(logDir, 'flowclone.log')
+      filename: path.join(logDir, 'voxscribe.log')
     })
   ]
 })

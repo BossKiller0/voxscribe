@@ -23,7 +23,7 @@ export class DatabaseService {
   async initialize(): Promise<void> {
     if (this.initialized) return
 
-    this.dbPath = path.join(app.getPath('userData'), 'flowclone.db')
+    this.dbPath = path.join(app.getPath('userData'), 'voxscribe.db')
     logger.info(`[DB] Initializing database at: ${this.dbPath}`)
 
     // Find the sql.js WASM file

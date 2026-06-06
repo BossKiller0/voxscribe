@@ -27,7 +27,7 @@ export function CommandPaletteApp() {
   useEffect(() => {
     inputRef.current?.focus()
 
-    const unsub = window.flowAPI.onCommandPaletteShow(() => {
+    const unsub = window.voxScribeAPI.onCommandPaletteShow(() => {
       setQuery('')
       setResult('')
       setError('')
@@ -41,7 +41,7 @@ export function CommandPaletteApp() {
     setIsExecuting(true)
     setError('')
     try {
-      const res = await window.flowAPI.executeAICommand(command, '')
+      const res = await window.voxScribeAPI.executeAICommand(command, '')
       if (res.success) {
         setResult(res.result || '')
       } else {
@@ -99,7 +99,7 @@ export function CommandPaletteApp() {
             onChange={(e) => setQuery(e.target.value)}
             onKeyDown={(e) => {
               if (e.key === 'Enter' && query) execute(query)
-              if (e.key === 'Escape') window.flowAPI.closeCommandPalette()
+              if (e.key === 'Escape') window.voxScribeAPI.closeCommandPalette()
             }}
             style={{
               flex: 1,
