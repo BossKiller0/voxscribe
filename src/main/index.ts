@@ -69,8 +69,8 @@ function createDashboardWindow(): BrowserWindow {
 }
 
 function createOverlayWindow(): BrowserWindow {
-  const winWidth = 100
-  const winHeight = 100
+  const winWidth = 400
+  const winHeight = 150
 
   const win = new BrowserWindow({
     width: winWidth,
@@ -102,6 +102,24 @@ function createOverlayWindow(): BrowserWindow {
 
   // Make the overlay window click-through
   win.setIgnoreMouseEvents(true)
+
+  // Prevent overlay window from holding focus (safety fallback on Windows)
+  win.on('focus', () => {
+    logger.info('[Overlay] Overlay window gained focus, blurring it to restore focus to active application')
+    win.blur()
+  })
+
+  // Center overlay if screen metrics/resolution change
+  screen.on('display-metrics-changed', () => {
+    if (!win.isDestroyed()) {
+      const primaryDisplay = screen.getPrimaryDisplay()
+      const { width: currentWidth, height: currentHeight } = primaryDisplay.workAreaSize
+      const targetX = Math.round((currentWidth - winWidth) / 2)
+      const targetY = Math.round(currentHeight - winHeight - 20)
+      win.setPosition(targetX, targetY)
+      logger.info(`[Overlay] Centered overlay on screen metrics change: (${targetX}, ${targetY})`)
+    }
+  })
 
   if (is.dev && process.env['ELECTRON_RENDERER_URL']) {
     win.loadURL(`${process.env['ELECTRON_RENDERER_URL']}/overlay.html`)

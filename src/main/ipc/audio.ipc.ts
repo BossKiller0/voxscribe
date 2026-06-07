@@ -45,9 +45,21 @@ export function resetGroqServices(): void {
 
 export function registerAudioIPC(): void {
   // Receive audio blob from renderer, run full pipeline
-  ipcMain.handle(IPC.AUDIO_TRANSCRIBE, async (_, payload: { buffer: ArrayBuffer; format: string }) => {
+  ipcMain.handle(IPC.AUDIO_TRANSCRIBE, async (_, payload: { buffer: ArrayBuffer; format: string; isSilent?: boolean }) => {
     const startTime = Date.now()
     logger.info('[IPC:audio] Transcription pipeline started')
+
+    if (payload.isSilent) {
+      logger.info('[IPC:audio] Microphone is silent/not working. Bypassing transcription.')
+      return {
+        success: false,
+        error: 'Mic is not working',
+        originalTranscript: '',
+        cleanedTranscript: '',
+        languageDetected: '',
+        durationMs: Date.now() - startTime
+      }
+    }
 
     let audioPath: string | null = null
 
