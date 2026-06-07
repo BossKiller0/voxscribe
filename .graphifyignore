@@ -1,0 +1,20 @@
+# Ignore docs and images to run offline without LLM API key
+*.md
+*.mdx
+*.qmd
+*.html
+*.txt
+*.rst
+*.yaml
+*.yml
+*.png
+*.jpg
+*.jpeg
+*.webp
+*.gif
+*.pdf
+node_modules/
+dist/
+out/
+.git/
+.agents/
