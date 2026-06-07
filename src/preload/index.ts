@@ -10,8 +10,8 @@ const voxScribeAPI = {
    * Send audio blob to main process for transcription pipeline.
    * Returns the transcription result.
    */
-  transcribeAudio: (buffer: ArrayBuffer, format: string): Promise<TranscriptionResult> =>
-    ipcRenderer.invoke(IPC.AUDIO_TRANSCRIBE, { buffer, format }),
+  transcribeAudio: (buffer: ArrayBuffer, format: string, isSilent?: boolean): Promise<TranscriptionResult> =>
+    ipcRenderer.invoke(IPC.AUDIO_TRANSCRIBE, { buffer, format, isSilent }),
 
   /**
    * Execute an AI command on selected text.

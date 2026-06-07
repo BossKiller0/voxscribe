@@ -64,6 +64,14 @@ export function registerWindowIPC(): void {
 
 export function showOverlay(): void {
   if (overlayWin && !overlayWin.isDestroyed()) {
+    const { screen } = require('electron')
+    const primaryDisplay = screen.getPrimaryDisplay()
+    const { width, height } = primaryDisplay.workAreaSize
+    const winBounds = overlayWin.getBounds()
+    const x = Math.round((width - winBounds.width) / 2)
+    const y = Math.round(height - winBounds.height - 20)
+    overlayWin.setPosition(x, y)
+
     overlayWin.showInactive()
     overlayWin.webContents.send(IPC.STATE_OVERLAY_SHOW)
   }

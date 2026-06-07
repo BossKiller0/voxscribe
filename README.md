@@ -18,6 +18,7 @@ A production-grade Electron + React + TypeScript desktop app that lets you dicta
 - 🎯 **Voice Commands**: "Rewrite professionally", "Translate to Hindi", "Make shorter", etc.
 - 📊 **History**: Searchable transcription history stored locally
 - 🔒 **Privacy-First**: No telemetry, all data stored locally
+- 🔇 **Silence & Mic Error Handling**: Smart microphone level monitoring shows a "Mic is not working" warning and prevents API transcription hallucinations (e.g. inserting "Thank you") if the mic is silent or disconnected.
 
 ---
 

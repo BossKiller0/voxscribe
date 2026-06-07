@@ -18,6 +18,8 @@ export function FloatingMicOverlay() {
   const isListening = recordingState === 'listening'
   const level = useMicrophoneLevel(isListening)
   const [visible, setVisible] = useState(true)
+  const [isSilent, setIsSilent] = useState(false)
+  const hasAudioInputRef = React.useRef(false)
 
   const config = STATE_CONFIG[recordingState]
   const isIdle = recordingState === 'idle'
@@ -25,7 +27,36 @@ export function FloatingMicOverlay() {
   const isInserting = recordingState === 'inserting'
   const isError = recordingState === 'error'
 
-  const size = isIdle ? 6 : 44
+  const size = isIdle ? 8 : 44
+
+  // Reset audio input tracker on state transition to listening
+  useEffect(() => {
+    if (recordingState === 'listening') {
+      hasAudioInputRef.current = false
+    }
+  }, [recordingState])
+
+  // Track silence during listening state
+  useEffect(() => {
+    if (recordingState !== 'listening') {
+      setIsSilent(false)
+      return
+    }
+    if (level > 0) {
+      setIsSilent(false)
+      hasAudioInputRef.current = true
+      return
+    }
+    const timer = setTimeout(() => {
+      setIsSilent(true)
+    }, 2000)
+    return () => clearTimeout(timer)
+  }, [level, recordingState])
+
+  const showStatusMessage = isError || (recordingState === 'listening' && isSilent)
+  const statusMessage = isError
+    ? (lastError || 'Microphone error. Check settings.')
+    : 'Microphone is not working. Please check your mic.'
 
   // Listen for IPC events from main process
   useEffect(() => {
@@ -36,6 +67,7 @@ export function FloatingMicOverlay() {
 
     const unsubRecording = window.voxScribeAPI.onRecordingStateChange(async (state) => {
       if (state === 'listening') {
+        hasAudioInputRef.current = false
         setRecordingState('listening')
         await startRecording()
       }
@@ -52,7 +84,11 @@ export function FloatingMicOverlay() {
 
       try {
         const arrayBuffer = await result.blob.arrayBuffer()
-        const transcriptionResult = await window.voxScribeAPI.transcribeAudio(arrayBuffer, result.format)
+        const transcriptionResult = await window.voxScribeAPI.transcribeAudio(
+          arrayBuffer,
+          result.format,
+          !hasAudioInputRef.current
+        )
 
         if (transcriptionResult.success) {
           setRecordingState('inserting')
@@ -81,13 +117,43 @@ export function FloatingMicOverlay() {
 
   return (
     <div
-      className="fixed inset-0 flex items-center justify-center"
+      className="fixed inset-0 flex flex-col items-center justify-center animate-fade-in"
       style={{
         fontFamily: "'Inter', sans-serif",
         WebkitFontSmoothing: 'antialiased',
-        pointerEvents: 'none'
+        pointerEvents: 'none',
+        gap: '12px'
       }}
     >
+      {/* Tooltip / Popup Message */}
+      {showStatusMessage && (
+        <div
+          className="glass animate-slide-up"
+          style={{
+            padding: '8px 16px',
+            borderRadius: '20px',
+            fontSize: '13px',
+            fontWeight: 500,
+            color: '#ff4d4d',
+            border: '1px solid rgba(255, 77, 77, 0.3)',
+            background: 'rgba(28, 28, 40, 0.95)',
+            boxShadow: '0 4px 16px rgba(255, 77, 77, 0.25), 0 0 12px rgba(255, 77, 77, 0.1)',
+            textAlign: 'center',
+            maxWidth: '340px',
+            whiteSpace: 'normal',
+            wordBreak: 'break-word',
+            zIndex: 10,
+            pointerEvents: 'none',
+            display: 'flex',
+            alignItems: 'center',
+            gap: '8px'
+          }}
+        >
+          <span style={{ fontSize: '14px' }}>⚠️</span>
+          <span>{statusMessage}</span>
+        </div>
+      )}
+
       {/* Circle / Dot Widget Container */}
       <div
         style={{
@@ -104,15 +170,31 @@ export function FloatingMicOverlay() {
       >
         {/* Idle Dot */}
         {isIdle && (
-          <div
-            style={{
-              width: '100%',
-              height: '100%',
-              borderRadius: '50%',
-              background: 'rgba(124, 111, 247, 0.25)',
-              pointerEvents: 'none'
-            }}
-          />
+          <>
+            <style>{`
+              @keyframes idle-pulse {
+                0%, 100% {
+                  transform: scale(1);
+                  opacity: 0.5;
+                }
+                50% {
+                  transform: scale(1.3);
+                  opacity: 0.9;
+                }
+              }
+            `}</style>
+            <div
+              style={{
+                width: '8px',
+                height: '8px',
+                borderRadius: '50%',
+                background: '#7c6ff7',
+                boxShadow: '0 0 8px rgba(124, 111, 247, 0.6)',
+                animation: 'idle-pulse 2.5s ease-in-out infinite',
+                pointerEvents: 'none'
+              }}
+            />
+          </>
         )}
 
         {/* Pulsing Background Circle for active states */}
