@@ -88,6 +88,26 @@ export function useAudioRecorder() {
     })
   }, [])
 
+  const cancelRecording = useCallback(() => {
+    const mediaRecorder = mediaRecorderRef.current
+    if (mediaRecorder && mediaRecorder.state !== 'inactive') {
+      mediaRecorder.onstop = null
+      try {
+        mediaRecorder.stop()
+      } catch (err) {
+        console.warn('[useAudioRecorder] Error stopping media recorder during cancellation:', err)
+      }
+    }
+    // Stop all tracks
+    if (streamRef.current) {
+      streamRef.current.getTracks().forEach((t) => t.stop())
+      streamRef.current = null
+    }
+    mediaRecorderRef.current = null
+    chunksRef.current = []
+    console.log('[useAudioRecorder] Recording cancelled and references cleaned')
+  }, [])
+
   const cleanup = useCallback(() => {
     streamRef.current?.getTracks().forEach((t) => t.stop())
     streamRef.current = null
@@ -98,5 +118,5 @@ export function useAudioRecorder() {
     return () => cleanup()
   }, [cleanup])
 
-  return { startRecording, stopRecording, cleanup }
+  return { startRecording, stopRecording, cancelRecording, cleanup }
 }

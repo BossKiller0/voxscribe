@@ -2,6 +2,7 @@ import React, { useEffect, useCallback, useState } from 'react'
 import { useRecordingStore } from '../store/recordingStore'
 import { useAudioRecorder } from '../hooks/useAudioRecorder'
 import { useMicrophoneLevel } from '../hooks/useMicrophoneLevel'
+import { useSettingsStore } from '../store/settingsStore'
 
 
 const STATE_CONFIG = {
@@ -14,12 +15,15 @@ const STATE_CONFIG = {
 
 export function FloatingMicOverlay() {
   const { recordingState, setRecordingState, setLastError, lastError } = useRecordingStore()
-  const { startRecording, stopRecording } = useAudioRecorder()
+  const { startRecording, stopRecording, cancelRecording } = useAudioRecorder()
+  const { settings, loadSettings } = useSettingsStore()
   const isListening = recordingState === 'listening'
   const level = useMicrophoneLevel(isListening)
   const [visible, setVisible] = useState(true)
   const [isSilent, setIsSilent] = useState(false)
+  const [isHovered, setIsHovered] = useState(false)
   const hasAudioInputRef = React.useRef(false)
+  const leaveTimeoutRef = React.useRef<NodeJS.Timeout | null>(null)
 
   const config = STATE_CONFIG[recordingState]
   const isIdle = recordingState === 'idle'
@@ -28,6 +32,33 @@ export function FloatingMicOverlay() {
   const isError = recordingState === 'error'
 
   const size = isIdle ? 8 : 44
+
+  useEffect(() => {
+    loadSettings()
+    
+    const unsub = window.voxScribeAPI.onSettingsChanged(() => {
+      loadSettings()
+    })
+
+    return () => {
+      unsub()
+      if (leaveTimeoutRef.current) {
+        clearTimeout(leaveTimeoutRef.current)
+      }
+    }
+  }, [])
+
+  // Force click-through and close hovers if interactable option is turned off
+  useEffect(() => {
+    if (!settings.overlayInteractable) {
+      setIsHovered(false)
+      window.voxScribeAPI.setIgnoreMouseEvents(true)
+      if (leaveTimeoutRef.current) {
+        clearTimeout(leaveTimeoutRef.current)
+        leaveTimeoutRef.current = null
+      }
+    }
+  }, [settings.overlayInteractable])
 
   // Reset audio input tracker on state transition to listening
   useEffect(() => {
@@ -57,6 +88,67 @@ export function FloatingMicOverlay() {
   const statusMessage = isError
     ? (lastError || 'Microphone error. Check settings.')
     : 'Microphone is not working. Please check your mic.'
+
+  // Hover handlers
+  const handleMouseEnter = () => {
+    if (settings.overlayInteractable) {
+      if (leaveTimeoutRef.current) {
+        clearTimeout(leaveTimeoutRef.current)
+        leaveTimeoutRef.current = null
+      }
+      setIsHovered(true)
+      window.voxScribeAPI.setIgnoreMouseEvents(false)
+    }
+  }
+
+  const handleMouseLeave = () => {
+    if (settings.overlayInteractable) {
+      if (leaveTimeoutRef.current) {
+        clearTimeout(leaveTimeoutRef.current)
+      }
+      leaveTimeoutRef.current = setTimeout(() => {
+        setIsHovered(false)
+        window.voxScribeAPI.setIgnoreMouseEvents(true)
+        leaveTimeoutRef.current = null
+      }, 300)
+    }
+  }
+
+  // Interactive menu actions
+  const handleStartRecording = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (leaveTimeoutRef.current) {
+      clearTimeout(leaveTimeoutRef.current)
+      leaveTimeoutRef.current = null
+    }
+    setIsHovered(false)
+    window.voxScribeAPI.setIgnoreMouseEvents(true)
+    await window.voxScribeAPI.startRecordingFromOverlay()
+  }
+
+  const handleDoneRecording = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (leaveTimeoutRef.current) {
+      clearTimeout(leaveTimeoutRef.current)
+      leaveTimeoutRef.current = null
+    }
+    setIsHovered(false)
+    window.voxScribeAPI.setIgnoreMouseEvents(true)
+    await window.voxScribeAPI.stopRecordingFromOverlay()
+  }
+
+  const handleCancelRecording = async (e: React.MouseEvent) => {
+    e.stopPropagation()
+    if (leaveTimeoutRef.current) {
+      clearTimeout(leaveTimeoutRef.current)
+      leaveTimeoutRef.current = null
+    }
+    setIsHovered(false)
+    window.voxScribeAPI.setIgnoreMouseEvents(true)
+    cancelRecording()
+    await window.voxScribeAPI.cancelRecordingFromOverlay()
+    setRecordingState('idle')
+  }
 
   // Listen for IPC events from main process
   useEffect(() => {
@@ -111,7 +203,7 @@ export function FloatingMicOverlay() {
       unsubRecording()
       unsubStop()
     }
-  }, [startRecording, stopRecording, setRecordingState, setLastError])
+  }, [setRecordingState, setLastError])
 
   if (!visible) return null
 
@@ -154,125 +246,267 @@ export function FloatingMicOverlay() {
         </div>
       )}
 
-      {/* Circle / Dot Widget Container */}
+      {/* Interactive Wrapper */}
       <div
+        onMouseEnter={handleMouseEnter}
+        onMouseLeave={handleMouseLeave}
         style={{
-          width: size,
-          height: size,
+          position: 'relative',
+          width: '56px',
+          height: '56px',
           display: 'flex',
           alignItems: 'center',
           justifyContent: 'center',
-          position: 'relative',
-          pointerEvents: 'none',
-          transform: 'translateZ(0)',
-          backfaceVisibility: 'hidden'
+          pointerEvents: settings.overlayInteractable ? 'auto' : 'none',
+          cursor: settings.overlayInteractable ? 'pointer' : 'default',
         }}
       >
-        {/* Idle Dot */}
-        {isIdle && (
-          <>
-            <style>{`
-              @keyframes idle-pulse {
-                0%, 100% {
-                  transform: scale(1);
-                  opacity: 0.5;
-                }
-                50% {
-                  transform: scale(1.3);
-                  opacity: 0.9;
-                }
-              }
-            `}</style>
+        {/* Circle / Dot Widget Container */}
+        <div
+          style={{
+            width: size,
+            height: size,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            position: 'relative',
+            pointerEvents: 'none',
+            transform: 'translateZ(0)',
+            backfaceVisibility: 'hidden'
+          }}
+        >
+          {/* Hover Popup Menu */}
+          {settings.overlayInteractable && isHovered && (isIdle || isListening) && (
             <div
               style={{
-                width: '8px',
-                height: '8px',
-                borderRadius: '50%',
-                background: '#7c6ff7',
-                boxShadow: '0 0 8px rgba(124, 111, 247, 0.6)',
-                animation: 'idle-pulse 2.5s ease-in-out infinite',
-                pointerEvents: 'none'
+                position: 'absolute',
+                bottom: '100%',
+                paddingBottom: '4px',
+                pointerEvents: 'auto',
+                zIndex: 100
               }}
-            />
-          </>
-        )}
+            >
+              <div
+                className="glass animate-slide-up"
+                style={{
+                  padding: '6px',
+                  borderRadius: '12px',
+                  border: '1px solid rgba(255, 255, 255, 0.08)',
+                  background: 'rgba(15, 15, 20, 0.92)',
+                  backdropFilter: 'blur(12px)',
+                  boxShadow: '0 8px 32px rgba(0, 0, 0, 0.5), 0 0 1px rgba(255, 255, 255, 0.1)',
+                  display: 'flex',
+                  gap: '6px',
+                  whiteSpace: 'nowrap'
+                }}
+              >
+                {isIdle && (
+                  <button
+                    onClick={handleStartRecording}
+                    style={{
+                      display: 'flex',
+                      alignItems: 'center',
+                      gap: '6px',
+                      padding: '6px 12px',
+                      borderRadius: '8px',
+                      border: 'none',
+                      background: '#7c6ff7',
+                      color: '#ffffff',
+                      fontSize: '12px',
+                      fontWeight: 600,
+                      cursor: 'pointer',
+                      transition: 'transform 0.15s ease, background 0.15s ease'
+                    }}
+                    onMouseEnter={(e) => {
+                      e.currentTarget.style.background = '#6b5ce6'
+                      e.currentTarget.style.transform = 'scale(1.03)'
+                    }}
+                    onMouseLeave={(e) => {
+                      e.currentTarget.style.background = '#7c6ff7'
+                      e.currentTarget.style.transform = 'scale(1)'
+                    }}
+                  >
+                    <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5">
+                      <polygon points="5 3 19 12 5 21 5 3" fill="currentColor"/>
+                    </svg>
+                    Start Recording
+                  </button>
+                )}
 
-        {/* Pulsing Background Circle for active states */}
-        {!isIdle && (
-          <div
-            style={{
-               position: 'absolute',
-              width: '100%',
-              height: '100%',
-              borderRadius: '50%',
-              background: config.bg,
-              border: `2px solid ${config.color}`,
-              boxShadow: `0 4px 12px rgba(0,0,0,0.3), 0 0 8px ${config.color}25`,
-              pointerEvents: 'none',
-              zIndex: 0
-            }}
-          />
-        )}
+                {isListening && (
+                  <>
+                    <button
+                      onClick={handleDoneRecording}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        border: 'none',
+                        background: '#4cd964',
+                        color: '#ffffff',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        transition: 'transform 0.15s ease, background 0.15s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#3dbd53'
+                        e.currentTarget.style.transform = 'scale(1.03)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = '#4cd964'
+                        e.currentTarget.style.transform = 'scale(1)'
+                      }}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="3" strokeLinecap="round" strokeLinejoin="round">
+                        <polyline points="20 6 9 17 4 12" />
+                      </svg>
+                      Done
+                    </button>
+                    <button
+                      onClick={handleCancelRecording}
+                      style={{
+                        display: 'flex',
+                        alignItems: 'center',
+                        gap: '6px',
+                        padding: '6px 12px',
+                        borderRadius: '8px',
+                        border: 'none',
+                        background: '#ff3b30',
+                        color: '#ffffff',
+                        fontSize: '12px',
+                        fontWeight: 600,
+                        cursor: 'pointer',
+                        transition: 'transform 0.15s ease, background 0.15s ease'
+                      }}
+                      onMouseEnter={(e) => {
+                        e.currentTarget.style.background = '#e03026'
+                        e.currentTarget.style.transform = 'scale(1.03)'
+                      }}
+                      onMouseLeave={(e) => {
+                        e.currentTarget.style.background = '#ff3b30'
+                        e.currentTarget.style.transform = 'scale(1)'
+                      }}
+                    >
+                      <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" strokeLinejoin="round">
+                        <line x1="18" y1="6" x2="6" y2="18"></line>
+                        <line x1="6" y1="6" x2="18" y2="18"></line>
+                      </svg>
+                      Cancel
+                    </button>
+                  </>
+                )}
+              </div>
+            </div>
+          )}
+          {/* Idle Dot */}
+          {isIdle && (
+            <>
+              <style>{`
+                @keyframes idle-pulse {
+                  0%, 100% {
+                    transform: scale(1);
+                    opacity: 0.5;
+                  }
+                  50% {
+                    transform: scale(1.3);
+                    opacity: 0.9;
+                  }
+                }
+              `}</style>
+              <div
+                style={{
+                  width: '8px',
+                  height: '8px',
+                  borderRadius: '50%',
+                  background: '#7c6ff7',
+                  boxShadow: '0 0 8px rgba(124, 111, 247, 0.6)',
+                  animation: 'idle-pulse 2.5s ease-in-out infinite',
+                  pointerEvents: 'none'
+                }}
+              />
+            </>
+          )}
 
-        {/* Ripple rings pulsing outwards behind/around the circle */}
-        {isListening && (
-          <>
-            <style>{`
-              @keyframes ripple-pulse {
-                0% {
-                  transform: scale(1);
-                  opacity: 0.5;
-                }
-                100% {
-                  transform: scale(1.4);
-                  opacity: 0;
-                }
-              }
-            `}</style>
+          {/* Pulsing Background Circle for active states */}
+          {!isIdle && (
             <div
               style={{
                 position: 'absolute',
                 width: '100%',
                 height: '100%',
                 borderRadius: '50%',
+                background: config.bg,
                 border: `2px solid ${config.color}`,
-                animation: 'ripple-pulse 1.8s cubic-bezier(0.215, 0.610, 0.355, 1) infinite',
+                boxShadow: `0 4px 12px rgba(0,0,0,0.3), 0 0 8px ${config.color}25`,
                 pointerEvents: 'none',
-                opacity: 0,
-                zIndex: 1
+                zIndex: 0
               }}
             />
-            <div
-              style={{
-                position: 'absolute',
-                width: '100%',
-                height: '100%',
-                borderRadius: '50%',
-                border: `2px solid ${config.color}`,
-                animation: 'ripple-pulse 1.8s cubic-bezier(0.215, 0.610, 0.355, 1) infinite',
-                animationDelay: '0.6s',
-                pointerEvents: 'none',
-                opacity: 0,
-                zIndex: 1
-              }}
-            />
-          </>
-        )}
+          )}
 
-        {/* Static Inner Icons in Foreground */}
-        <div style={{
-          position: 'relative',
-          zIndex: 2,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'center',
-          transform: 'translateZ(0)',
-          backfaceVisibility: 'hidden'
-        }}>
-          {isListening && <MicIcon color={config.color} isActive={true} />}
-          {isProcessing && <ProcessingSpinner color={config.color} />}
-          {isInserting && <CheckIcon color={config.color} />}
-          {isError && <ErrorIcon />}
+          {/* Ripple rings pulsing outwards behind/around the circle */}
+          {isListening && (
+            <>
+              <style>{`
+                @keyframes ripple-pulse {
+                  0% {
+                    transform: scale(1);
+                    opacity: 0.5;
+                  }
+                  100% {
+                    transform: scale(1.4);
+                    opacity: 0;
+                  }
+                }
+              `}</style>
+              <div
+                style={{
+                  position: 'absolute',
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: '50%',
+                  border: `2px solid ${config.color}`,
+                  animation: 'ripple-pulse 1.8s cubic-bezier(0.215, 0.610, 0.355, 1) infinite',
+                  pointerEvents: 'none',
+                  opacity: 0,
+                  zIndex: 1
+                }}
+              />
+              <div
+                style={{
+                  position: 'absolute',
+                  width: '100%',
+                  height: '100%',
+                  borderRadius: '50%',
+                  border: `2px solid ${config.color}`,
+                  animation: 'ripple-pulse 1.8s cubic-bezier(0.215, 0.610, 0.355, 1) infinite',
+                  animationDelay: '0.6s',
+                  pointerEvents: 'none',
+                  opacity: 0,
+                  zIndex: 1
+                }}
+              />
+            </>
+          )}
+
+          {/* Static Inner Icons in Foreground */}
+          <div style={{
+            position: 'relative',
+            zIndex: 2,
+            display: 'flex',
+            alignItems: 'center',
+            justifyContent: 'center',
+            transform: 'translateZ(0)',
+            backfaceVisibility: 'hidden'
+          }}>
+            {isListening && <MicIcon color={config.color} isActive={true} />}
+            {isProcessing && <ProcessingSpinner color={config.color} />}
+            {isInserting && <CheckIcon color={config.color} />}
+            {isError && <ErrorIcon />}
+          </div>
         </div>
       </div>
     </div>

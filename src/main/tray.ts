@@ -2,8 +2,9 @@ import { Tray, Menu, nativeImage, BrowserWindow, app } from 'electron'
 import path from 'path'
 import { logger } from './logger'
 import { IPC } from '../shared/types'
-import { sendToOverlay } from './ipc/window.ipc'
+import { sendToOverlay, sendToDashboard } from './ipc/window.ipc'
 import { getIsRecording } from './hotkeys'
+import { getSettingsStore } from './store'
 
 let tray: Tray | null = null
 let dashboardWindow: BrowserWindow | null = null
@@ -75,6 +76,8 @@ export function updateTrayMenu(): void {
   if (!tray) return
 
   const recording = getIsRecording()
+  const store = getSettingsStore()
+  const overlayInteractable = store.get('overlayInteractable')
 
   const contextMenu = Menu.buildFromTemplate([
     {
@@ -101,6 +104,19 @@ export function updateTrayMenu(): void {
           dashboardWindow.focus()
           dashboardWindow.webContents.send('navigate', '/settings')
         }
+      }
+    },
+    {
+      label: '✨ Interactable Overlay',
+      type: 'checkbox',
+      checked: !!overlayInteractable,
+      click: (menuItem) => {
+        const newValue = menuItem.checked
+        store.set('overlayInteractable', newValue)
+        
+        sendToOverlay('settings:changed', store.store)
+        sendToDashboard('settings:changed', store.store)
+        logger.info(`[Tray] Toggled overlayInteractable to ${newValue}`)
       }
     },
     { type: 'separator' },

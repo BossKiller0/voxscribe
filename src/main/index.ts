@@ -13,6 +13,7 @@ import { registerWindowIPC, setWindowRefs } from './ipc/window.ipc'
 import { DatabaseService } from './services/DatabaseService'
 import { ensureValidApiKey, registerApiKeyIPC } from './services/ApiKeyService'
 import { logger } from './logger'
+import { getSettingsStore } from './store'
 
 // Load environment variables from .env
 dotenv.config()
@@ -21,6 +22,10 @@ let dashboardWindow: BrowserWindow | null = null
 let overlayWindow: BrowserWindow | null = null
 let commandPaletteWindow: BrowserWindow | null = null
 let isQuitting = false
+
+function shouldStartHidden(): boolean {
+  return process.argv.includes('--hidden') || app.getLoginItemSettings().wasOpenedAsHidden
+}
 
 function createDashboardWindow(): BrowserWindow {
   const win = new BrowserWindow({
@@ -42,7 +47,11 @@ function createDashboardWindow(): BrowserWindow {
   })
 
   win.on('ready-to-show', () => {
-    win.show()
+    if (!shouldStartHidden()) {
+      win.show()
+    } else {
+      logger.info('[App] Dashboard window started hidden')
+    }
   })
 
   win.on('close', (e) => {
@@ -70,7 +79,7 @@ function createDashboardWindow(): BrowserWindow {
 
 function createOverlayWindow(): BrowserWindow {
   const winWidth = 400
-  const winHeight = 150
+  const winHeight = 220
 
   const win = new BrowserWindow({
     width: winWidth,
@@ -100,8 +109,8 @@ function createOverlayWindow(): BrowserWindow {
   const y = Math.round(height - winHeight - 20) // 20px above the taskbar/bottom area
   win.setPosition(x, y)
 
-  // Make the overlay window click-through
-  win.setIgnoreMouseEvents(true)
+  // Make the overlay window click-through (but forward mouse events so renderer can detect hovers)
+  win.setIgnoreMouseEvents(true, { forward: true })
 
   // Prevent overlay window from holding focus (safety fallback on Windows)
   win.on('focus', () => {
@@ -158,96 +167,113 @@ function createCommandPaletteWindow(): BrowserWindow {
   return win
 }
 
-app.whenReady().then(async () => {
-  // Set app user model id for Windows
-  electronApp.setAppUserModelId('com.voxscribe.windows')
+const gotTheLock = app.requestSingleInstanceLock()
 
-  // Sync login item settings with launchOnStartup setting
-  try {
-    const { getSettingsStore } = require('./store')
-    const store = getSettingsStore()
-    const launchOnStartup = store.get('launchOnStartup')
-    app.setLoginItemSettings({
-      openAtLogin: !!launchOnStartup,
-      path: app.getPath('exe')
-    })
-    logger.info(`[App] Synced login item settings: ${launchOnStartup}`)
-  } catch (err: any) {
-    logger.error(`[App] Failed to sync login item settings: ${err.message}`)
-  }
-
-  // Open DevTools with F12, ignore default shortcuts in dev
-  app.on('browser-window-created', (_, window) => {
-    optimizer.watchWindowShortcuts(window)
+if (!gotTheLock) {
+  logger.info('[App] Another instance is already running. Quitting.')
+  app.quit()
+} else {
+  app.on('second-instance', () => {
+    if (dashboardWindow && !dashboardWindow.isDestroyed()) {
+      if (dashboardWindow.isMinimized()) {
+        dashboardWindow.restore()
+      }
+      dashboardWindow.show()
+      dashboardWindow.focus()
+    }
   })
 
-  // Initialize database FIRST (async, sql.js)
-  try {
-    await DatabaseService.getInstance().initialize()
-    logger.info('[App] Database initialized')
-  } catch (err: any) {
-    logger.error(`[App] Database initialization failed: ${err.message}`)
-  }
+  app.whenReady().then(async () => {
+    // Set app user model id for Windows
+    electronApp.setAppUserModelId('com.voxscribe.windows')
 
-  // Register API key IPC handlers
-  registerApiKeyIPC()
+    // Sync login item settings with launchOnStartup setting
+    try {
+      const store = getSettingsStore()
+      const launchOnStartup = store.get('launchOnStartup')
+      app.setLoginItemSettings({
+        openAtLogin: !!launchOnStartup,
+        path: app.getPath('exe'),
+        args: launchOnStartup ? ['--hidden'] : []
+      })
+      logger.info(`[App] Synced login item settings: ${launchOnStartup}`)
+    } catch (err: any) {
+      logger.error(`[App] Failed to sync login item settings: ${err.message}`)
+    }
 
-  // Ensure valid API Key exists before proceeding
-  await ensureValidApiKey()
+    // Open DevTools with F12, ignore default shortcuts in dev
+    app.on('browser-window-created', (_, window) => {
+      optimizer.watchWindowShortcuts(window)
+    })
 
-  // Create windows
-  dashboardWindow = createDashboardWindow()
-  overlayWindow = createOverlayWindow()
-  commandPaletteWindow = createCommandPaletteWindow()
+    // Initialize database FIRST (async, sql.js)
+    try {
+      await DatabaseService.getInstance().initialize()
+      logger.info('[App] Database initialized')
+    } catch (err: any) {
+      logger.error(`[App] Database initialization failed: ${err.message}`)
+    }
 
-  // Show the overlay window inactive immediately so the idle dot is visible
-  if (overlayWindow) {
-    overlayWindow.showInactive()
-  }
+    // Register API key IPC handlers
+    registerApiKeyIPC()
 
-  // Wire window refs for IPC
-  setWindowRefs(dashboardWindow, overlayWindow, commandPaletteWindow)
+    // Ensure valid API Key exists before proceeding
+    await ensureValidApiKey()
 
-  // Create system tray
-  createTray(dashboardWindow)
-
-  // Register all IPC handlers
-  registerAudioIPC()
-  registerSettingsIPC()
-  registerHistoryIPC()
-  registerSnippetsIPC()
-  registerVocabularyIPC()
-  registerWindowIPC()
-
-  // Register global hotkeys
-  registerHotkeys()
-
-  // Prune old history on startup
-  pruneOldHistory()
-
-  logger.info('✅ VoxScribe Windows started successfully')
-  logger.info(`📝 Hold Ctrl+Shift to start dictating`)
-})
-
-app.on('window-all-closed', () => {
-  // On Windows, keep app running in tray
-  if (process.platform !== 'darwin') {
-    // Don't quit — stay in tray
-  }
-})
-
-app.on('before-quit', () => {
-  isQuitting = true
-})
-
-app.on('will-quit', () => {
-  unregisterHotkeys()
-  destroyTray()
-  logger.info('[App] Shutting down')
-})
-
-app.on('activate', () => {
-  if (BrowserWindow.getAllWindows().length === 0) {
+    // Create windows
     dashboardWindow = createDashboardWindow()
-  }
-})
+    overlayWindow = createOverlayWindow()
+    commandPaletteWindow = createCommandPaletteWindow()
+
+    // Show the overlay window inactive immediately so the idle dot is visible
+    if (overlayWindow) {
+      overlayWindow.showInactive()
+    }
+
+    // Wire window refs for IPC
+    setWindowRefs(dashboardWindow, overlayWindow, commandPaletteWindow)
+
+    // Create system tray
+    createTray(dashboardWindow)
+
+    // Register all IPC handlers
+    registerAudioIPC()
+    registerSettingsIPC()
+    registerHistoryIPC()
+    registerSnippetsIPC()
+    registerVocabularyIPC()
+    registerWindowIPC()
+
+    // Register global hotkeys
+    registerHotkeys()
+
+    // Prune old history on startup
+    pruneOldHistory()
+
+    logger.info('✅ VoxScribe Windows started successfully')
+    logger.info(`📝 Hold Ctrl+Shift to start dictating`)
+  })
+
+  app.on('window-all-closed', () => {
+    // On Windows, keep app running in tray
+    if (process.platform !== 'darwin') {
+      // Don't quit — stay in tray
+    }
+  })
+
+  app.on('before-quit', () => {
+    isQuitting = true
+  })
+
+  app.on('will-quit', () => {
+    unregisterHotkeys()
+    destroyTray()
+    logger.info('[App] Shutting down')
+  })
+
+  app.on('activate', () => {
+    if (BrowserWindow.getAllWindows().length === 0) {
+      dashboardWindow = createDashboardWindow()
+    }
+  })
+}

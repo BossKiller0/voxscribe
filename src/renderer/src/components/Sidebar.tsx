@@ -71,6 +71,11 @@ interface SidebarProps {
 
 export function Sidebar({ onNavigate }: SidebarProps) {
   const { activePage, setActivePage } = useUIStore()
+  const [version, setVersion] = React.useState('1.0.0')
+
+  React.useEffect(() => {
+    window.voxScribeAPI.getVersion().then(setVersion).catch(() => {})
+  }, [])
 
   const navigate = (page: Page) => {
     setActivePage(page)
@@ -170,7 +175,7 @@ export function Sidebar({ onNavigate }: SidebarProps) {
 
       {/* Version footer */}
       <div style={{ fontSize: 11, color: '#333345', textAlign: 'center', paddingTop: 12 }}>
-        VoxScribe v1.0.0
+        VoxScribe v{version}
       </div>
     </aside>
   )

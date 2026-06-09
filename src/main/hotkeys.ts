@@ -107,14 +107,14 @@ export function unregisterHotkeys(): void {
   logger.info('[Hotkeys] All hotkeys unregistered')
 }
 
-function startRecording(): void {
+export function startRecording(): void {
   isRecording = true
   logger.info('[Hotkeys] Recording started')
   showOverlay()
   sendToOverlay(IPC.STATE_RECORDING_CHANGED, 'listening')
 }
 
-function stopRecording(): void {
+export function stopRecording(): void {
   isRecording = false
   logger.info('[Hotkeys] Recording stopped — requesting audio from renderer')
   sendToOverlay(IPC.STATE_RECORDING_CHANGED, 'processing')
