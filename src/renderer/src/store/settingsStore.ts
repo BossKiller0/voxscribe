@@ -37,3 +37,10 @@ export const useSettingsStore = create<SettingsStore>((set, get) => ({
     set({ settings: DEFAULT_SETTINGS })
   }
 }))
+
+// Auto-sync settings changes across all windows
+if (typeof window !== 'undefined' && window.voxScribeAPI) {
+  window.voxScribeAPI.onSettingsChanged((newSettings) => {
+    useSettingsStore.setState({ settings: newSettings })
+  })
+}

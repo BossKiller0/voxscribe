@@ -56,6 +56,9 @@ export interface AppSettings {
 
   // Startup
   launchOnStartup: boolean
+
+  // UI Interactability
+  overlayInteractable: boolean
 }
 
 export const DEFAULT_SETTINGS: AppSettings = {
@@ -79,7 +82,8 @@ export const DEFAULT_SETTINGS: AppSettings = {
   historyEnabled: true,
   primaryHotkey: 'Ctrl+Shift',
   commandPaletteHotkey: 'Ctrl+Shift+Enter',
-  launchOnStartup: false
+  launchOnStartup: false,
+  overlayInteractable: true
 }
 
 // ─── Dictation History ────────────────────────────────────────────────────────

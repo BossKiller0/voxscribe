@@ -1,6 +1,7 @@
 import { ipcMain, BrowserWindow, app } from 'electron'
 import { IPC } from '../../shared/types'
 import { logger } from '../logger'
+import { startRecording, stopRecording, setIsRecording } from '../hotkeys'
 
 let dashboardWin: BrowserWindow | null = null
 let overlayWin: BrowserWindow | null = null
@@ -59,6 +60,29 @@ export function registerWindowIPC(): void {
 
   ipcMain.handle(IPC.APP_GET_VERSION, () => {
     return app.getVersion()
+  })
+
+  ipcMain.on('overlay:set-ignore-mouse-events', (_, ignore: boolean) => {
+    if (overlayWin && !overlayWin.isDestroyed()) {
+      if (ignore) {
+        overlayWin.setIgnoreMouseEvents(true, { forward: true })
+      } else {
+        overlayWin.setIgnoreMouseEvents(false)
+      }
+    }
+  })
+
+  ipcMain.handle('overlay:start-recording', () => {
+    startRecording()
+  })
+
+  ipcMain.handle('overlay:stop-recording', () => {
+    stopRecording()
+  })
+
+  ipcMain.handle('overlay:cancel-recording', () => {
+    setIsRecording(false)
+    logger.info('[IPC:overlay] Recording cancelled from overlay UI')
   })
 }
 

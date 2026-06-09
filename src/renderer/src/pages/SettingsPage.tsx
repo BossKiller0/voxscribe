@@ -295,6 +295,17 @@ export function SettingsPage() {
           )}
         </section>
 
+        {/* Overlay */}
+        <section style={{ marginBottom: 36 }}>
+          <SectionHeader title="Overlay" subtitle="Customize the floating dictation widget" />
+          <ToggleRow
+            label="Interactable Overlay"
+            desc="Enable hover actions, start/stop/cancel recording directly from the floating widget"
+            checked={settings.overlayInteractable}
+            onChange={(v) => save({ overlayInteractable: v })}
+          />
+        </section>
+
         {/* Startup */}
         <section style={{ marginBottom: 36 }}>
           <SectionHeader title="System" />

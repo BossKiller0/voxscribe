@@ -115,6 +115,11 @@ const voxScribeAPI = {
     return () => { ipcRenderer.removeAllListeners('navigate') }
   },
 
+  onSettingsChanged: (callback: (settings: AppSettings) => void) => {
+    ipcRenderer.on('settings:changed', (_, settings) => callback(settings))
+    return () => { ipcRenderer.removeAllListeners('settings:changed') }
+  },
+
   submitApiKey: (key: string): Promise<{ success: boolean; error?: string }> =>
     ipcRenderer.invoke('api-key:submit', key),
 
@@ -122,7 +127,20 @@ const voxScribeAPI = {
     ipcRenderer.invoke('api-key:remove'),
 
   openGroqConsole: (): Promise<void> =>
-    ipcRenderer.invoke('api-key:open-console')
+    ipcRenderer.invoke('api-key:open-console'),
+
+  setIgnoreMouseEvents: (ignore: boolean): void => {
+    ipcRenderer.send('overlay:set-ignore-mouse-events', ignore)
+  },
+
+  startRecordingFromOverlay: (): Promise<void> =>
+    ipcRenderer.invoke('overlay:start-recording'),
+
+  stopRecordingFromOverlay: (): Promise<void> =>
+    ipcRenderer.invoke('overlay:stop-recording'),
+
+  cancelRecordingFromOverlay: (): Promise<void> =>
+    ipcRenderer.invoke('overlay:cancel-recording')
 }
 
 contextBridge.exposeInMainWorld('voxScribeAPI', voxScribeAPI)
