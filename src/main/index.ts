@@ -102,6 +102,16 @@ function createOverlayWindow(): BrowserWindow {
     }
   })
 
+  // Set highest always-on-top level and enable visibility on all workspaces (including fullscreen)
+  win.setAlwaysOnTop(true, 'screen-saver')
+  win.setVisibleOnAllWorkspaces(true, { visibleOnFullScreen: true })
+
+  // Restore the window if it gets minimized (e.g. via Win+D / Show Desktop)
+  win.on('minimize', () => {
+    logger.info('[Overlay] Overlay window minimized, restoring it')
+    win.restore()
+  })
+
   // Centered at the bottom-middle of the primary display
   const { screen } = require('electron')
   const { width, height } = screen.getPrimaryDisplay().workAreaSize

@@ -1,5 +1,5 @@
 import initSqlJs, { Database } from 'sql.js'
-import { app } from 'electron'
+import { app, dialog } from 'electron'
 import fs from 'fs'
 import path from 'path'
 import { logger } from '../logger'
@@ -39,16 +39,55 @@ export class DatabaseService {
     })
 
     // Load existing DB or create new
+    let loadedSuccessfully = false
     if (fs.existsSync(this.dbPath)) {
-      const fileBuffer = fs.readFileSync(this.dbPath)
-      this.db = new SQL.Database(fileBuffer)
-      logger.info('[DB] Loaded existing database')
-    } else {
-      this.db = new SQL.Database()
-      logger.info('[DB] Created new database')
+      try {
+        const fileBuffer = fs.readFileSync(this.dbPath)
+        this.db = new SQL.Database(fileBuffer)
+        // Execute a quick validation query to check database integrity.
+        // If the database is corrupted (e.g. filled with null bytes), this will throw.
+        this.db.run('PRAGMA user_version;')
+        logger.info('[DB] Loaded and verified existing database')
+        loadedSuccessfully = true
+      } catch (err: any) {
+        logger.error(`[DB] Database verification failed (file is likely corrupted): ${err.message}`)
+      }
     }
 
-    this.migrate()
+    if (!loadedSuccessfully) {
+      if (fs.existsSync(this.dbPath)) {
+        dialog.showMessageBoxSync({
+          type: 'warning',
+          title: 'Database Corrupted',
+          message: 'It looks like your local database is corrupted.',
+          detail: 'VoxScribe will reset it and start with a fresh database so you can continue recording. Your corrupted database has been saved as voxscribe.db.corrupted.',
+          buttons: ['OK']
+        })
+
+        try {
+          const corruptedPath = this.dbPath + '.corrupted'
+          if (fs.existsSync(corruptedPath)) {
+            fs.unlinkSync(corruptedPath)
+          }
+          fs.renameSync(this.dbPath, corruptedPath)
+          logger.info(`[DB] Renamed corrupted database to ${corruptedPath}`)
+        } catch (renameErr: any) {
+          logger.error(`[DB] Failed to rename corrupted database: ${renameErr.message}`)
+        }
+      }
+      this.db = new SQL.Database()
+      logger.info('[DB] Initialized fresh database')
+    }
+
+    try {
+      this.migrate()
+    } catch (err: any) {
+      logger.error(`[DB] Migration failed: ${err.message}. Force resetting database to avoid stuck state.`)
+      // Fallback: if migration fails on what we thought was a loaded DB, force reset it
+      this.db = new SQL.Database()
+      this.migrate()
+    }
+
     this.initialized = true
     logger.info('[DB] Database ready')
   }
@@ -56,7 +95,9 @@ export class DatabaseService {
   private save(): void {
     const data = this.db.export()
     const buffer = Buffer.from(data)
-    fs.writeFileSync(this.dbPath, buffer)
+    const tempPath = this.dbPath + '.tmp'
+    fs.writeFileSync(tempPath, buffer)
+    fs.renameSync(tempPath, this.dbPath)
   }
 
   private migrate(): void {
